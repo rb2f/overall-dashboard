@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ace Blend — Amazon Ads Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root {
+  --bg:#f0f2f7; --surface:#ffffff; --surface2:#f7f8fc; --surface3:#eef0f6;
+  --border:#e2e5ef; --border2:#cdd1e0;
+  --text:#1a2035; --text2:#4a5470; --text3:#8892ae;
+  --accent:#2563eb; --accent2:#0891b2; --accent3:#d97706; --accent4:#059669;
+  --danger:#dc2626; --warn:#ea580c;
+  --tos:#2563eb; --ros:#059669; --pp:#d97706;
+  --a-color:#2563eb; --b-color:#d97706;
+  --font:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;min-height:100vh;}
+
+/* LOADING */
+#loading{position:fixed;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px;}
+.load-ring{width:44px;height:44px;border:3px solid #e2e5ef;border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.load-bar{width:220px;height:3px;background:#e2e5ef;border-radius:2px;overflow:hidden;}
+.load-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));animation:lfill 2s ease-out forwards;}
+@keyframes lfill{to{width:100%;}}
+.load-text{color:var(--text3);font-size:13px;font-weight:500;}
+
+/* HEADER */
+header{background:#fff;border-bottom:1px solid var(--border);padding:0 20px;height:50px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:200;box-shadow:var(--shadow);}
+.logo{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;}
+.logo-pill{background:var(--accent);color:#fff;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.06em;}
+.hsep{flex:1;}
+#dateDisplay{color:var(--text3);font-size:11px;font-family:var(--mono);}
+
+/* TABS */
+.tabs{background:#fff;border-bottom:1px solid var(--border);padding:0 20px;display:flex;}
+.tab{padding:11px 16px;font-size:11px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;text-transform:uppercase;letter-spacing:.05em;}
+.tab:hover{color:var(--text2);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* FILTER BARS */
+.fbar{background:#fff;border-bottom:1px solid var(--border);padding:9px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.fbar.b-bar{background:#fffbf0;border-bottom-color:#fde68a;}
+.period-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.02em;}
+.period-tag.a{background:#dbeafe;color:#1d4ed8;}
+.period-tag.b{background:#fef3c7;color:#b45309;}
+.fg{display:flex;align-items:center;gap:5px;}
+.fl{color:var(--text3);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;}
+select,input[type=date]{background:#fff;border:1px solid var(--border);color:var(--text);padding:5px 9px;border-radius:6px;font-size:12px;font-family:var(--font);cursor:pointer;outline:none;transition:border-color .15s;box-shadow:inset 0 1px 2px rgba(0,0,0,.04);}
+select:focus,input[type=date]:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(37,99,235,.1);}
+.fsep{width:1px;height:20px;background:var(--border);}
+.qd{display:flex;gap:3px;}
+.qdb{padding:3px 9px;border-radius:5px;font-size:11px;font-weight:500;cursor:pointer;background:#fff;border:1px solid var(--border);color:var(--text3);transition:all .12s;}
+.qdb:hover,.qdb.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.cmp-btn{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:#fff;border:1px solid var(--border);color:var(--text3);transition:all .15s;}
+.cmp-btn:hover{border-color:var(--accent3);color:var(--accent3);}
+.cmp-btn.on{background:#fef3c7;border-color:var(--accent3);color:#92400e;}
+
+/* PANELS */
+.main{padding:16px 20px;}
+.panel{display:none;}.panel.active{display:block;}
+
+/* KPI GRID */
+.kpi-row{display:grid;gap:14px;margin-bottom:16px;}
+.kpi-row.one{grid-template-columns:1fr;}
+.kpi-row.two{grid-template-columns:1fr 1fr;}
+.kpi-section{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);}
+.kpi-sec-hdr{padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.kpi-sec-hdr .period-tag{font-size:11px;}
+.kpi-count{color:var(--text3);font-size:11px;margin-left:auto;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
+.kpi-cell{padding:12px 14px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
+.kpi-cell:last-child{border-right:0;}
+.kpi-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:4px;}
+.kpi-val{font-size:20px;font-weight:700;font-family:var(--mono);color:var(--text);line-height:1;margin-bottom:3px;}
+.kpi-delta{font-size:10px;font-weight:500;color:var(--text3);}
+.kpi-delta.pos{color:var(--accent4);}.kpi-delta.neg{color:var(--danger);}
+.kpi-stripe{height:2px;margin-top:5px;border-radius:1px;}
+.ks-blue .kpi-stripe{background:var(--accent);}
+.ks-cyan .kpi-stripe{background:var(--accent2);}
+.ks-amber .kpi-stripe{background:var(--accent3);}
+.ks-green .kpi-stripe{background:var(--accent4);}
+.ks-red .kpi-stripe{background:var(--danger);}
+.ks-orange .kpi-stripe{background:var(--warn);}
+
+/* CHARTS */
+.chart-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;box-shadow:var(--shadow);}
+.chart-hdr{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+.chart-title{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;}
+.divider{flex:1;}
+
+/* METRIC PILLS */
+.metric-pill{display:inline-flex;align-items:center;padding:3px 9px;border-radius:4px;font-size:11px;font-weight:500;cursor:pointer;background:var(--surface2);border:1px solid var(--border);color:var(--text3);transition:all .12s;}
+.metric-pill:hover{border-color:var(--border2);color:var(--text2);}
+.metric-pill.sel-0{background:#dbeafe;border-color:#93c5fd;color:#1d4ed8;}
+.metric-pill.sel-1{background:#d1fae5;border-color:#6ee7b7;color:#065f46;}
+.metric-pill.sel-2{background:#fef3c7;border-color:#fcd34d;color:#92400e;}
+.metric-pill.sel-3{background:#fed7aa;border-color:#fdba74;color:#9a3412;}
+.metric-pill.maxed{opacity:.4;cursor:not-allowed;}
+.m-toggle{display:inline-flex;align-items:center;padding:3px 9px;border-radius:4px;font-size:11px;font-weight:500;cursor:pointer;background:var(--surface2);border:1px solid var(--border);color:var(--text3);transition:all .12s;}
+.m-toggle.on{background:#dbeafe;border-color:#93c5fd;color:#1d4ed8;}
+
+/* PLACEMENT TOGGLES */
+.plc-tog{display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;background:var(--surface2);border:1px solid var(--border);color:var(--text3);transition:all .12s;}
+.plc-tog.on.tos{background:#dbeafe;border-color:#93c5fd;color:var(--tos);}
+.plc-tog.on.ros{background:#d1fae5;border-color:#6ee7b7;color:var(--ros);}
+.plc-tog.on.pp{background:#fef3c7;border-color:#fcd34d;color:var(--pp);}
+.legend-note{font-size:10px;color:var(--text3);margin-top:4px;line-height:1.5;}
+
+/* PLACEMENT CARDS */
+.plc-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;}
+.plc-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px;box-shadow:var(--shadow);}
+.plc-badge{display:inline-block;padding:3px 10px;border-radius:5px;font-size:11px;font-weight:700;margin-bottom:10px;}
+.plc-badge.tos{background:#dbeafe;color:var(--tos);}
+.plc-badge.ros{background:#d1fae5;color:var(--ros);}
+.plc-badge.pp{background:#fef3c7;color:var(--pp);}
+.pm{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);}
+.pm:last-child{border-bottom:0;}
+.pm-l{color:var(--text3);font-size:11px;}.pm-v{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text);}
+
+/* SECTION HDR */
+.sec-hdr{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.sec-title{font-size:12px;font-weight:700;color:var(--text);}
+.sec-line{flex:1;height:1px;background:var(--border);}
+
+/* COMPARE TABLES */
+.cmp-tables{display:grid;gap:14px;}
+.cmp-tables.one{grid-template-columns:1fr;}
+.cmp-tables.two{grid-template-columns:1fr 1fr;}
+
+/* TABLE CARD */
+.tbl-card{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);}
+.tbl-card.a-border{border-top:3px solid var(--a-color);}
+.tbl-card.b-border{border-top:3px solid var(--b-color);}
+.tbl-hdr{padding:10px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);background:var(--surface2);flex-wrap:wrap;}
+.tbl-title{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;flex:1;}
+.srch{background:#fff;border:1px solid var(--border);color:var(--text);padding:4px 9px;border-radius:5px;font-size:11px;font-family:var(--font);outline:none;width:170px;}
+.srch:focus{border-color:var(--accent);}
+.ppg{background:#fff;border:1px solid var(--border);color:var(--text2);padding:4px 7px;border-radius:5px;font-size:11px;font-family:var(--font);outline:none;}
+.tbl-wrap{overflow-x:auto;max-height:440px;overflow-y:auto;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+thead{position:sticky;top:0;z-index:2;}
+th{background:var(--surface2);padding:6px 10px;text-align:right;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;font-size:9px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;}
+th.left{text-align:left;}
+th:hover{color:var(--text);}
+th.sort-asc::after{content:' ↑';color:var(--accent);}
+th.sort-desc::after{content:' ↓';color:var(--accent);}
+td{padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text);text-align:right;vertical-align:middle;}
+td.left{text-align:left;}
+tr:hover td{background:#f7f8fc;}
+tr:last-child td{border-bottom:0;}
+.asin-link{color:var(--accent2);text-decoration:none;font-family:var(--mono);font-size:10px;font-weight:500;}
+.asin-link:hover{text-decoration:underline;}
+.badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;}
+.badge-tos{background:#dbeafe;color:var(--tos);}
+.badge-ros{background:#d1fae5;color:var(--ros);}
+.badge-pp{background:#fef3c7;color:var(--pp);}
+.badge-gen{background:#e2e5ef;color:#4a5470;}
+.badge-comp{background:#fee2e2;color:#b91c1c;}
+.badge-branded{background:#dbeafe;color:#1d4ed8;}
+.badge-mix{background:#ede9fe;color:#6d28d9;}
+.badge-def{background:#d1fae5;color:#065f46;}
+.badge-ext1{background:#fef3c7;color:#92400e;}
+.badge-ext2{background:#fce7f3;color:#9d174d;}
+.badge-ext3{background:#e0f2fe;color:#075985;}
+.tag{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;background:var(--surface3);color:var(--text3);}
+.num{font-family:var(--mono);}
+.good{color:var(--accent4);font-weight:600;}
+.bad{color:var(--danger);font-weight:600;}
+.warn{color:var(--warn);font-weight:600;}
+.pg{display:flex;align-items:center;gap:6px;padding:8px 12px;border-top:1px solid var(--border);background:var(--surface2);}
+.pgb{padding:3px 9px;border-radius:4px;background:#fff;border:1px solid var(--border);color:var(--text2);cursor:pointer;font-size:10px;font-family:var(--font);}
+.pgb:hover{border-color:var(--accent);color:var(--accent);}
+.pgb:disabled{opacity:.4;cursor:default;}
+.pgi{color:var(--text3);font-size:10px;flex:1;}
+
+.chart-title-sm{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding:2px 0;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--surface2);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+/* Campaign select dropdown with search */
+.camp-wrap{position:relative;display:inline-block;}
+.camp-sel{min-width:160px;max-width:240px;}
+/* Table-level filter bar (above each table) */
+.tbl-filter-bar{padding:8px 12px;background:#f7f8fc;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.tfl{color:var(--text3);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;}
+.tfsep{width:1px;height:16px;background:var(--border);}
+.metric-filter{display:flex;align-items:center;gap:3px;}
+.mf-sel{background:#fff;border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:5px;font-size:11px;font-family:var(--font);outline:none;max-width:90px;}
+.mf-op{background:#fff;border:1px solid var(--border);color:var(--text);padding:3px 5px;border-radius:5px;font-size:11px;font-family:var(--font);outline:none;width:50px;}
+.mf-val{background:#fff;border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:5px;font-size:11px;font-family:var(--font);outline:none;width:72px;}
+.mf-val::placeholder{color:var(--text3);}
+.mf-add{padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;background:var(--accent);color:#fff;border:none;}
+.mf-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:4px;background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:600;cursor:pointer;}
+.mf-tag:hover{background:#fee2e2;color:#b91c1c;}
+/* Total row */
+tr.total-row td{font-weight:700;background:#f0f4ff;border-bottom:2px solid #c7d7f7;font-family:var(--mono);font-size:11px;}
+tr.total-row td.left{color:var(--accent);font-family:var(--font);}
+
+/* Upload UI */
+.upload-overlay{position:fixed;inset:0;background:rgba(255,255,255,.97);z-index:8000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
+.upload-box{border:2px dashed var(--border2);border-radius:16px;padding:48px 60px;text-align:center;cursor:pointer;transition:all .2s;background:#f7f8fc;max-width:560px;width:90%;}
+.upload-box:hover{border-color:var(--accent);background:#f0f4ff;}
+.upload-icon{font-size:48px;margin-bottom:8px;}
+.upload-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:6px;}
+.upload-sub{font-size:13px;color:var(--text3);line-height:1.5;}
+.upload-btn{margin-top:16px;padding:10px 28px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);}
+.upload-btn:hover{background:#1d4ed8;}
+.upload-progress{font-size:13px;color:var(--text2);margin-top:8px;}
+.upload-err{color:var(--danger);font-size:12px;margin-top:6px;}
+/* Campaign modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:7000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-box{background:#fff;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.15);max-width:800px;width:100%;max-height:80vh;overflow-y:auto;}
+.modal-hdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:#fff;z-index:1;}
+.modal-title{font-size:14px;font-weight:700;color:var(--text);flex:1;}
+.modal-close{padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:13px;color:var(--text3);}
+.modal-body{padding:16px 20px;}
+.camp-row{padding:10px 0;border-bottom:1px solid var(--border);}
+.camp-row:last-child{border-bottom:none;}
+.camp-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px;}
+.camp-metrics{display:flex;gap:12px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;}
+.camp-metric{display:flex;flex-direction:column;gap:1px;min-width:70px;}
+.camp-metric-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);}
+.camp-metric-val{color:var(--text);font-weight:600;}
+.bleeding{color:var(--danger);font-weight:700;}
+/* KPI filter - hide placeholder when nothing active */
+.mf-active-wrap{display:none;}
+.mf-active-wrap.has-filters{display:flex;gap:4px;flex-wrap:wrap;}
+/* tbl filter bar */
+.tbl-filter-bar{padding:8px 12px;background:#f7f8fc;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.tfl{color:var(--text3);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;}
+.tfsep{width:1px;height:16px;background:var(--border);}
+.metric-filter{display:flex;align-items:center;gap:3px;}
+.mf-sel{background:#fff;border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:5px;font-size:11px;font-family:var(--font);outline:none;max-width:90px;}
+.mf-op{background:#fff;border:1px solid var(--border);color:var(--text);padding:3px 5px;border-radius:5px;font-size:11px;font-family:var(--font);outline:none;width:50px;}
+.mf-val{background:#fff;border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:5px;font-size:11px;font-family:var(--font);outline:none;width:72px;}
+.mf-val::placeholder{color:var(--text3);}
+.mf-add{padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;background:var(--accent);color:#fff;border:none;}
+.mf-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:4px;background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:600;cursor:pointer;}
+.mf-tag:hover{background:#fee2e2;color:#b91c1c;}
+tr.total-row td{font-weight:700;background:#f0f4ff;border-bottom:2px solid #c7d7f7;font-family:var(--mono);font-size:11px;}
+tr.total-row td.left{color:var(--accent);font-family:var(--font);}
+.camp-sel{min-width:160px;max-width:240px;}
+.chart-title-sm{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding:2px 0;}
+/* Upload replace button */
+.replace-btn{position:fixed;bottom:16px;right:16px;padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);box-shadow:0 4px 12px rgba(37,99,235,.3);z-index:500;}
+.replace-btn:hover{background:#1d4ed8;}
+</style>
+</head>
+<body>
+
+<!-- ═══ UPLOAD OVERLAY ═══ -->
+<div id="uploadOverlay" class="upload-overlay">
+  <div class="upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" ondragleave="this.style.borderColor=''" ondrop="event.preventDefault();this.style.borderColor='';handleFileDrop(event)">
+    <div class="upload-icon">📊</div>
+    <div class="upload-title">Upload Amazon Ads Report</div>
+    <div class="upload-sub">Drop your Excel file here or click to browse.<br><br>
+      <strong>Required:</strong> 1 sheet with STR IS data (sheet name should contain: <code>STR IS</code>, <code>STRIS</code>, <code>SP STR</code>, <code>Search Term</code>, or similar)<br>
+      <strong>Optional:</strong> SP Placement, Campaign Mapper, ASIN Mapper sheets
+    </div>
+    <button class="upload-btn" onclick="event.stopPropagation();document.getElementById('fileInput').click()">Choose Excel File</button>
+    <div class="upload-progress" id="uploadProgress"></div>
+    <div class="upload-err" id="uploadErr"></div>
+  </div>
+  <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="handleFile(event)">
+</div>
+
+<!-- ═══ CAMPAIGN DETAIL MODAL ═══ -->
+<div id="campModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeCampModal()">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <span class="modal-title" id="campModalTitle">Campaign Breakdown</span>
+      <button class="modal-close" onclick="closeCampModal()">✕ Close</button>
+    </div>
+    <div class="modal-body" id="campModalBody"></div>
+  </div>
+</div>
+
+<div id="dashWrap" style="display:none">
+
+<div id="loading" style="position:fixed;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px;">
+  <div class="load-ring"></div>
+  <div class="load-bar"><div class="load-fill" style="width:0"></div></div>
+  <div class="load-text" id="loadText">Processing…</div>
+</div>
+
+<header>
+  <div class="logo"><div class="logo-pill">ADS</div><span id="brandName">Amazon Ads</span></div>
+  <span style="color:var(--border2)">|</span>
+  <span style="color:var(--text3);font-size:11px">Advertising Dashboard</span>
+  <div class="hsep"></div>
+  <span id="dateDisplay"></span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('str')">Search Term Report</div>
+  <div class="tab" onclick="switchTab('placement')">Placement Report</div>
+</div>
+
+<!-- FILTER BAR PERIOD A -->
+<div class="fbar" id="fbarA">
+  <div class="period-tag a">Period A</div>
+  <div class="qd">
+    <div class="qdb" onclick="setQuick(7,'a',this)">7D</div>
+    <div class="qdb" onclick="setQuick(14,'a',this)">14D</div>
+    <div class="qdb" onclick="setQuick(30,'a',this)">30D</div>
+    <div class="qdb active" onclick="setQuick(36,'a',this)">All</div>
+  </div>
+  <input type="date" id="a_from" value="2026-03-01" onchange="applyFilters()">
+  <span style="color:var(--text3)">→</span>
+  <input type="date" id="a_to" value="2026-04-05" onchange="applyFilters()">
+  <div class="fsep"></div>
+  <div class="fg"><span class="fl">Portfolio</span>
+    <select id="a_port" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="fg"><span class="fl">Category</span>
+    <select id="a_cat" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="fg"><span class="fl">BCG</span>
+    <select id="a_bcg" onchange="applyFilters()">
+      <option value="">All</option>
+    </select></div>
+  <div class="fg"><span class="fl">Campaign</span>
+    <select id="a_camp" class="camp-sel" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="fg" id="a_match_wrap"><span class="fl">Match</span>
+    <select id="a_match" onchange="applyFilters()">
+      <option value="">All</option><option value="-">Auto</option><option value="EXACT">Exact</option>
+      <option value="BROAD">Broad</option><option value="PHRASE">Phrase</option>
+    </select></div>
+  <div class="fg" id="a_plc_wrap" style="display:none"><span class="fl">Placement</span>
+    <select id="a_plc" onchange="applyFilters()">
+      <option value="">All</option><option>TOS</option><option>ROS</option><option>PP</option>
+    </select></div>
+  <div class="fsep"></div><div class="cmp-btn" id="cmpBtn" onclick="toggleCompare()">⟳ Compare periods</div>
+</div>
+
+<!-- FILTER BAR PERIOD B -->
+<div class="fbar b-bar" id="fbarB" style="display:none">
+  <div class="period-tag b">Period B</div>
+  <div class="qd">
+    <div class="qdb" onclick="setQuick(7,'b',this)">7D</div>
+    <div class="qdb" onclick="setQuick(14,'b',this)">14D</div>
+    <div class="qdb" onclick="setQuick(30,'b',this)">30D</div>
+    <div class="qdb" onclick="setQuick(36,'b',this)">All</div>
+  </div>
+  <input type="date" id="b_from" value="2026-03-01" onchange="applyFilters()">
+  <span style="color:var(--text3)">→</span>
+  <input type="date" id="b_to" value="2026-03-31" onchange="applyFilters()">
+  <div class="fsep"></div>
+  <div class="fg"><span class="fl">Portfolio</span>
+    <select id="b_port" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="fg"><span class="fl">Category</span>
+    <select id="b_cat" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="fg"><span class="fl">BCG</span>
+    <select id="b_bcg" onchange="applyFilters()">
+      <option value="">All</option>
+    </select></div>
+  <div class="fg"><span class="fl">Campaign</span>
+    <select id="b_camp" class="camp-sel" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="fg" id="b_match_wrap"><span class="fl">Match</span>
+    <select id="b_match" onchange="applyFilters()">
+      <option value="">All</option><option value="-">Auto</option><option value="EXACT">Exact</option>
+      <option value="BROAD">Broad</option><option value="PHRASE">Phrase</option>
+    </select></div>
+  <div class="fg" id="b_plc_wrap" style="display:none"><span class="fl">Placement</span>
+    <select id="b_plc" onchange="applyFilters()">
+      <option value="">All</option><option>TOS</option><option>ROS</option><option>PP</option>
+    </select></div>
+  
+</div>
+
+
+<!-- ═══ STR PANEL ═══ -->
+<div id="panel-str" class="panel active">
+  <div class="main">
+    <div class="kpi-row one" id="str-kpi-row">
+      <div class="kpi-section" id="str-kpi-a"></div>
+    </div>
+    <div class="sec-hdr">
+      <span class="sec-title">Daily Trend</span>
+      <div id="strMetricToggles" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+      <div class="sec-line"></div>
+    </div>
+    <div class="chart-card" id="str-chart-single">
+      <div class="chart-wrap" style="height:260px"><canvas id="trendChart"></canvas></div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">Search Term Detail</span><div class="sec-line"></div></div>
+    <div class="cmp-tables one" id="str-tbl-grid">
+      <div id="str-col-a">
+
+        <div class="chart-card" id="str-chart-a" style="display:none;margin-bottom:12px;">
+          <div class="chart-title-sm" id="str-chart-lbl-a"></div>
+          <div class="chart-wrap" style="height:220px"><canvas id="trendChartA"></canvas></div>
+        </div>
+        <div class="tbl-card a-border" id="str-card-a">
+          <div class="tbl-hdr">
+            <span class="tbl-title" id="str-lbl-a">Search Terms</span>
+            <select class="ppg" id="str-pp-a" onchange="renderStr('a')"><option value="25">25/pg</option><option value="50" selected>50/pg</option><option value="100">100/pg</option><option value="250">250/pg</option></select>
+          </div>
+          <div class="tbl-filter-bar" id="str-tfl-a"></div>
+          <div class="tbl-wrap"><table><thead><tr id="str-head-a"></tr></thead><tbody id="str-body-a"></tbody></table></div>
+          <div class="pg">
+            <span class="pgi" id="str-pgi-a"></span>
+            <button class="pgb" id="str-prev-a" onclick="strPg('a',-1)">← Prev</button>
+            <button class="pgb" id="str-next-a" onclick="strPg('a',1)">Next →</button>
+          </div>
+        </div>
+      </div>
+      <div id="str-col-b" style="display:none">
+
+        <div class="chart-card" id="str-chart-b" style="margin-bottom:12px;">
+          <div class="chart-title-sm" id="str-chart-lbl-b"></div>
+          <div class="chart-wrap" style="height:220px"><canvas id="trendChartB"></canvas></div>
+        </div>
+        <div class="tbl-card b-border" id="str-card-b">
+          <div class="tbl-hdr">
+            <span class="tbl-title" id="str-lbl-b">Search Terms</span>
+            <select class="ppg" id="str-pp-b" onchange="renderStr('b')"><option value="25">25/pg</option><option value="50" selected>50/pg</option><option value="100">100/pg</option><option value="250">250/pg</option></select>
+          </div>
+          <div class="tbl-filter-bar" id="str-tfl-b"></div>
+          <div class="tbl-wrap"><table><thead><tr id="str-head-b"></tr></thead><tbody id="str-body-b"></tbody></table></div>
+          <div class="pg">
+            <span class="pgi" id="str-pgi-b"></span>
+            <button class="pgb" id="str-prev-b" onclick="strPg('b',-1)">← Prev</button>
+            <button class="pgb" id="str-next-b" onclick="strPg('b',1)">Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PLACEMENT PANEL ═══ -->
+<div id="panel-placement" class="panel">
+  <div class="main">
+    <div class="kpi-row one" id="plc-kpi-row">
+      <div class="kpi-section" id="plc-kpi-a"></div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">Daily Performance</span><div class="sec-line"></div></div>
+    <div class="chart-card" id="plc-ctrl-bar" style="padding:10px 14px;margin-bottom:12px;">
+      <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;">
+        <span style="color:var(--text3);font-size:10px;font-weight:600;text-transform:uppercase;">Placements:</span>
+        <div id="plcPlcToggles" style="display:flex;gap:4px;"></div>
+        <span style="color:var(--border2);margin:0 4px">|</span>
+        <span style="color:var(--text3);font-size:10px;font-weight:600;text-transform:uppercase;">Metrics (max 4):</span>
+        <div id="plcMetricPills" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+      </div>
+      <div class="legend-note" id="plcLegendNote"></div>
+    </div>
+    <div class="chart-card" id="plc-chart-single" style="margin-bottom:12px;">
+      <div class="chart-wrap" style="height:280px"><canvas id="plcTrendChart"></canvas></div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">Campaign × Placement Detail</span><div class="sec-line"></div></div>
+    <div class="cmp-tables one" id="plc-tbl-grid">
+      <div id="plc-col-a">
+
+        <div class="chart-card" id="plc-chart-a" style="display:none;margin-bottom:12px;">
+          <div class="chart-title-sm" id="plc-chart-lbl-a"></div>
+          <div class="chart-wrap" style="height:240px"><canvas id="plcTrendChartA"></canvas></div>
+        </div>
+        <div class="tbl-card a-border" id="plc-card-a">
+          <div class="tbl-hdr">
+            <span class="tbl-title" id="plc-lbl-a">Placements</span>
+            <select class="ppg" id="plc-pp-a" onchange="renderPlc('a')"><option value="25">25/pg</option><option value="50" selected>50/pg</option><option value="100">100/pg</option></select>
+          </div>
+          <div class="tbl-filter-bar" id="plc-tfl-a"></div>
+          <div class="tbl-wrap"><table><thead><tr id="plc-head-a"></tr></thead><tbody id="plc-body-a"></tbody></table></div>
+          <div class="pg">
+            <span class="pgi" id="plc-pgi-a"></span>
+            <button class="pgb" id="plc-prev-a" onclick="plcPg('a',-1)">← Prev</button>
+            <button class="pgb" id="plc-next-a" onclick="plcPg('a',1)">Next →</button>
+          </div>
+        </div>
+      </div>
+      <div id="plc-col-b" style="display:none">
+
+        <div class="chart-card" id="plc-chart-b" style="margin-bottom:12px;">
+          <div class="chart-title-sm" id="plc-chart-lbl-b"></div>
+          <div class="chart-wrap" style="height:240px"><canvas id="plcTrendChartB"></canvas></div>
+        </div>
+        <div class="tbl-card b-border" id="plc-card-b">
+          <div class="tbl-hdr">
+            <span class="tbl-title" id="plc-lbl-b">Placements</span>
+            <select class="ppg" id="plc-pp-b" onchange="renderPlc('b')"><option value="25">25/pg</option><option value="50" selected>50/pg</option><option value="100">100/pg</option></select>
+          </div>
+          <div class="tbl-filter-bar" id="plc-tfl-b"></div>
+          <div class="tbl-wrap"><table><thead><tr id="plc-head-b"></tr></thead><tbody id="plc-body-b"></tbody></table></div>
+          <div class="pg">
+            <span class="pgi" id="plc-pgi-b"></span>
+            <button class="pgb" id="plc-prev-b" onclick="plcPg('b',-1)">← Prev</button>
+            <button class="pgb" id="plc-next-b" onclick="plcPg('b',1)">Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end dashWrap -->
+
+<button class="replace-btn" id="replaceBtn" style="display:none" onclick="showUpload()">↑ Load New File</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const ASIN_MAP = {};
+
+
+let RAW_STR=[], RAW_PLC=[], ALL_CAMPS=[], BRAND_NAME='Ace Blend';
+const BCG_PALETTE=['badge-gen','badge-comp','badge-branded','badge-mix','badge-def','badge-ext1','badge-ext2','badge-ext3'];
+const _bcgClsCache={};
+function getBcgCls(val){
+  if(!val)return 'badge-gen';
+  if(_bcgClsCache[val])return _bcgClsCache[val];
+  const known={gen:'badge-gen',comp:'badge-comp',branded:'badge-branded',mix:'badge-mix'};
+  const lv=val.toLowerCase();
+  if(known[lv]){_bcgClsCache[val]=known[lv];return known[lv];}
+  const used=Object.values(_bcgClsCache);
+  const next=BCG_PALETTE.find(c=>!used.includes(c))||'badge-ext3';
+  _bcgClsCache[val]=next;
+  return next;
+}
+let DA_STR=[], DA_PLC=[], DB_STR=[], DB_PLC=[];
+let GA_STR=[], GA_PLC=[], GB_STR=[], GB_PLC=[];
+let FA_STR=[], FA_PLC=[], FB_STR=[], FB_PLC=[];
+let currentTab='str', cmpMode=false;
+let pgA_str=1,pgB_str=1,pgA_plc=1,pgB_plc=1;
+let sortA_str='Spend',dirA_str=-1,sortB_str='Spend',dirB_str=-1;
+let sortA_plc='Spend',dirA_plc=-1,sortB_plc='Spend',dirB_plc=-1;
+let trendInst=null,trendInstA=null,trendInstB=null;
+let plcTrendInst=null,plcInstA=null,plcInstB=null;
+let activeTrendMetrics=['Spend'];
+let mfA_str=[],mfB_str=[],mfA_plc=[],mfB_plc=[];
+const PLC_METRICS=[
+  {key:'Spend',label:'Spend ₹',fmt:'rs'},{key:'Impressions',label:'Impr',fmt:'num'},
+  {key:'Clicks',label:'Clicks',fmt:'num'},{key:'orders',label:'Orders',fmt:'num'},
+  {key:'units',label:'Units',fmt:'num'},{key:'sales',label:'Sales ₹',fmt:'rs'},
+  {key:'acos',label:'ACoS%',fmt:'pct'},{key:'ctr',label:'CTR%',fmt:'pct'},
+  {key:'cpc',label:'CPC ₹',fmt:'rs'},{key:'roas',label:'RoAS',fmt:'x'},{key:'cr',label:'Ad CR%',fmt:'pct'},
+];
+const STR_TREND_METRICS=[
+  {key:'Spend',label:'Spend',fmt:'rs',col:'#ea580c'},{key:'Impressions',label:'Impr',fmt:'num',col:'#2563eb'},
+  {key:'Clicks',label:'Clicks',fmt:'num',col:'#0891b2'},{key:'orders',label:'Orders',fmt:'num',col:'#059669'},
+  {key:'sales',label:'Sales',fmt:'rs',col:'#16a34a'},{key:'acos',label:'ACoS',fmt:'pct',col:'#dc2626'},
+  {key:'ctr',label:'CTR',fmt:'pct',col:'#7c3aed'},{key:'cpc',label:'CPC',fmt:'rs',col:'#d97706'},
+];
+const MC=['#2563eb','#059669','#d97706','#dc2626'];
+const PLC_DASH={TOS:[],ROS:[6,3],PP:[2,4]};
+let selMets=['Spend'],selPlcs=['TOS','ROS','PP'];
+const STR_MF_FIELDS=[
+  {key:'Impressions',label:'Impressions'},{key:'Clicks',label:'Clicks'},{key:'ctr',label:'CTR%'},
+  {key:'Spend',label:'Spend'},{key:'cpc',label:'CPC'},{key:'orders',label:'Orders'},
+  {key:'sales',label:'Sales'},{key:'acos',label:'ACoS%'},{key:'roas',label:'RoAS'},
+  {key:'cvr',label:'Ad CR%'},{key:'is_share',label:'IS%'},{key:'is_rank',label:'IS Rank'},
+];
+const PLC_MF_FIELDS=[
+  {key:'Impressions',label:'Impressions'},{key:'Clicks',label:'Clicks'},{key:'ctr',label:'CTR%'},
+  {key:'Spend',label:'Spend'},{key:'cpc',label:'CPC'},{key:'orders',label:'Orders'},
+  {key:'units',label:'Units'},{key:'sales',label:'Sales'},{key:'acos',label:'ACoS%'},
+  {key:'roas',label:'RoAS'},{key:'cr',label:'Ad CR%'},
+];
+
+// ── FILE UPLOAD ───────────────────────────────────────────
+function showUpload(){
+  document.getElementById('uploadProgress').textContent='';
+  document.getElementById('uploadErr').textContent='';
+  document.getElementById('uploadOverlay').style.display='flex';
+}
+
+function handleFileDrop(event){
+  const file=event.dataTransfer.files[0];
+  if(!file)return;
+  // simulate file input selection
+  handleFileObj(file);
+}
+async function handleFile(event){
+  const file=event.target.files[0];if(!file)return;
+  await handleFileObj(file);
+}
+async function handleFileObj(file){
+  const prog=document.getElementById('uploadProgress');
+  const err=document.getElementById('uploadErr');
+  prog.textContent='Reading file…';err.textContent='';
+  try{
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(buf,{type:'arraybuffer',cellDates:true});
+    prog.textContent='Parsing sheets…';
+    // Find sheets by name pattern
+    const findSheet=patterns=>{
+      for(const sh of wb.SheetNames){
+        const sl=sh.toLowerCase();
+        if(patterns.some(p=>sl.includes(p)))return wb.Sheets[sh];
+      }
+      return null;
+    };
+    const strSheet=findSheet(['str is','str_is','search term','sp str','stris','sp_stris']);
+    const plcSheet=findSheet(['placement','sp placement']);
+    const asinSheet=findSheet(['asin mapper','asin_mapper']);
+    const campSheet=findSheet(['campaign mapper','campaign_mapper']);
+    if(!strSheet)throw new Error('Could not find STR IS sheet. Sheet name should contain: STR IS, STRIS, SP STR, or Search Term.');
+    prog.textContent='Processing STR data…';
+    const strRaw=XLSX.utils.sheet_to_json(strSheet,{defval:0});
+    const plcRaw=plcSheet?XLSX.utils.sheet_to_json(plcSheet,{defval:0}):[];
+    // Parse ASIN mapper
+    let asinMapLocal={};
+    if(asinSheet){
+      const asinRows=XLSX.utils.sheet_to_json(asinSheet,{defval:''});
+      asinRows.forEach(r=>{
+        const asin=r['ASIN']||r['asin']||'';
+        const title=r['Title']||r['title']||'';
+        const url=r['www.amazon.in/dp/']||r['url']||'';
+        if(asin)asinMapLocal[asin]={title,url};
+      });
+    }
+    // Parse campaign mapper
+    let campMapLocal={};
+    if(campSheet){
+      const campRows=XLSX.utils.sheet_to_json(campSheet,{defval:''});
+      campRows.forEach(r=>{
+        const name=r['Campaign']||r['campaign']||'';
+        if(name)campMapLocal[name]={bcg:r['BCG']||r['bcg']||'',category:r['Category']||r['category']||''};
+      });
+    }
+    prog.textContent='Building records…';
+
+    const cleanNum=(v,isInt=false)=>{
+      if(v===null||v===undefined||v==='')return 0;
+      if(typeof v==='number')return isInt?Math.round(v):v;
+      const s=String(v).replace(/[₹,\s]/g,'').trim();
+      if(s==='')return 0;
+      const n=isInt?parseInt(s):parseFloat(s);
+      return isNaN(n)?0:n;
+    };
+    const findCol=(keys,candidates)=>{
+      for(const c of candidates){const cl=c.toLowerCase().trim();const k=keys.find(k=>k.trim().toLowerCase()===cl);if(k!==undefined)return k;}
+      for(const c of candidates){const cl=c.toLowerCase().trim();const k=keys.find(k=>k.toLowerCase().includes(cl));if(k!==undefined)return k;}
+      return null;
+    };
+    const strKeys=strRaw.length?Object.keys(strRaw[0]):[];
+    const ordersKey=findCol(strKeys,['7 day total orders (#)','14 day total orders (#)','total orders (#)','orders (#)','orders']);
+    const unitsKey =findCol(strKeys,['7 day total units (#)','14 day total units (#)','total units (#)','units (#)','units']);
+    const salesKey =findCol(strKeys,['7 day total sales','14 day total sales','total sales','sales']);
+    const cvrKey   =findCol(strKeys,['7 day conversion rate','14 day conversion rate','conversion rate','cvr']);
+    const ctrKey   =findCol(strKeys,['click-through rate (ctr)','click-thru rate (ctr)','click-through rate','click-thru rate','ctr']);
+    const acosKey  =findCol(strKeys,['total advertising cost of sales (acos)','advertising cost of sales','acos']);
+    const hasOrders=!!ordersKey;const hasUnits=!!unitsKey&&!hasOrders;
+    window._STR_CONV_KEY=ordersKey||unitsKey||null;
+    window._STR_CONV_LABEL=hasOrders?'Orders':hasUnits?'Units':'Orders';
+    window._STR_CONV_ISUNIT=hasUnits;
+    console.log('[ADS] cols → orders:',ordersKey,'units:',unitsKey,'sales:',salesKey,'cvr:',cvrKey,'ctr:',ctrKey,'acos:',acosKey);
+
+    const strNorm=strRaw.map(r=>{
+      const targeting=r['Targeting']||r['targeting']||'';
+      const asinM=targeting.match(/asin="([A-Z0-9]{10})"/);
+      const td=asinM?asinM[1]:targeting;
+      const dateRaw=r['Date']||'';
+      let dateStr='';
+      if(dateRaw instanceof Date)dateStr=dateRaw.toISOString().slice(0,10);
+      else if(typeof dateRaw==='string')dateStr=dateRaw.slice(0,10);
+      else if(typeof dateRaw==='number'){const d=XLSX.SSF.parse_date_code(dateRaw);dateStr=`${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;}
+      const camp=r['Campaign Name']||r['campaign']||'';
+      const cm=campMapLocal[camp]||{};
+      return{
+        Date:dateStr,
+        portfolio:r['Portfolio name']||r['portfolio']||'',
+        campaign:camp,
+        ad_group:r['Ad Group Name']||'',
+        match_type:r['Match Type']||r['match_type']||'-',
+        search_term:r['Customer Search Term']||r['search_term']||td,
+        Targeting:targeting,
+        targeting_display:td,
+        is_rank:cleanNum(r['Search Term Impression Rank']),
+        is_share:cleanNum(r['Search Term Impression Share']),
+        Clicks:cleanNum(r['Clicks'],true),
+        Impressions:cleanNum(r['Impressions'],true),
+        Spend:cleanNum(r['Spend']),
+        cpc:cleanNum(r['Cost Per Click (CPC)']||r['cpc']),
+        ctr:ctrKey?cleanNum(r[ctrKey]):0,
+        orders:ordersKey?cleanNum(r[ordersKey],true):0,
+        units:unitsKey?cleanNum(r[unitsKey],true):0,
+        sales:salesKey?cleanNum(r[salesKey]):0,
+        acos:acosKey?cleanNum(r[acosKey]):0,
+        roas:cleanNum(r['Total Return on Advertising Spend (ROAS)']||r['roas']),
+        cvr:cvrKey?cleanNum(r[cvrKey]):0,
+        bcg:cm.bcg||'',
+        category:cm.category||'',
+      };
+    }).filter(r=>r.Date);
+
+    const plcKeys=plcRaw.length?Object.keys(plcRaw[0]):[];
+    const plcOrdersKey=findCol(plcKeys,['7 day total orders (#)','14 day total orders (#)','total orders (#)','orders (#)','orders']);
+    const plcUnitsKey =findCol(plcKeys,['7 day total units (#)','14 day total units (#)','total units (#)','units (#)','units']);
+    const plcSalesKey =findCol(plcKeys,['7 day total sales','14 day total sales','total sales','sales']);
+    const plcAcosKey  =findCol(plcKeys,['total advertising cost of sales (acos)','advertising cost of sales','acos']);
+
+    const plcNorm=plcRaw.map(r=>{
+      const dateRaw=r['Date']||'';
+      let dateStr='';
+      if(dateRaw instanceof Date)dateStr=dateRaw.toISOString().slice(0,10);
+      else if(typeof dateRaw==='string')dateStr=dateRaw.slice(0,10);
+      else if(typeof dateRaw==='number'){const d=XLSX.SSF.parse_date_code(dateRaw);dateStr=`${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;}
+      const plcRaw2=r['Placement']||'';
+      const plcMap={'Top of Search on Amazon':'TOS','Rest of search on Amazon':'ROS','Product pages on Amazon':'PP'};
+      const camp=r['Campaign Name']||r['campaign']||'';
+      const cm=campMapLocal[camp]||{};
+      return{
+        Date:dateStr,
+        portfolio:r['Portfolio name']||r['portfolio']||'',
+        campaign:camp,
+        Placement:plcRaw2,
+        placement_short:plcMap[plcRaw2]||plcRaw2,
+        Impressions:cleanNum(r['Impressions'],true),
+        Clicks:cleanNum(r['Clicks'],true),
+        Spend:cleanNum(r['Spend']),
+        cpc:cleanNum(r['Cost Per Click (CPC)']||r['cpc']),
+        orders:plcOrdersKey?cleanNum(r[plcOrdersKey],true):0,
+        units:plcUnitsKey?cleanNum(r[plcUnitsKey],true):0,
+        sales:plcSalesKey?cleanNum(r[plcSalesKey]):0,
+        acos:plcAcosKey?cleanNum(r[plcAcosKey]):0,
+        roas:cleanNum(r['Total Return on Advertising Spend (ROAS)']||r['roas']),
+        bcg:cm.bcg||'',
+        category:cm.category||'',
+      };
+    }).filter(r=>r.Date);
+    // Merge ASIN maps
+    Object.assign(ASIN_MAP,asinMapLocal);
+    await loadData(strNorm,plcNorm,file.name.replace(/\.xlsx?$/i,''));
+  }catch(e){
+    err.textContent='Error: '+e.message;
+    prog.textContent='';
+    console.error(e);
+  }
+}
+
+async function decomp(b64){
+  const bin=atob(b64),bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+  const ds=new DecompressionStream('gzip');
+  const w=ds.writable.getWriter();w.write(bytes);w.close();
+  const r=ds.readable.getReader();const ch=[];
+  while(true){const{done,value}=await r.read();if(done)break;ch.push(value);}
+  const tot=ch.reduce((a,c)=>a+c.length,0);const out=new Uint8Array(tot);let off=0;
+  ch.forEach(c=>{out.set(c,off);off+=c.length;});
+  return new TextDecoder().decode(out);
+}
+
+async function loadData(strData,plcData,brandName){
+  RAW_STR=strData;RAW_PLC=plcData;BRAND_NAME=brandName||'Amazon Ads';
+  document.getElementById('brandName').textContent=BRAND_NAME;
+  // Date range from data
+  const allDates=[...new Set([...RAW_STR.map(r=>r.Date),...RAW_PLC.map(r=>r.Date)])].sort();
+  if(allDates.length){
+    document.getElementById('a_from').value=allDates[0];
+    document.getElementById('a_to').value=allDates[allDates.length-1];
+    document.getElementById('b_from').value=allDates[0];
+    document.getElementById('b_to').value=allDates[allDates.length-1];
+  }
+  // Populate dropdowns
+  const ports=[...new Set([...RAW_STR.map(r=>r.portfolio),...RAW_PLC.map(r=>r.portfolio)])].filter(Boolean).sort();
+  const cats=[...new Set([...RAW_STR.map(r=>r.category),...RAW_PLC.map(r=>r.category)])].filter(Boolean).sort();
+  ALL_CAMPS=[...new Set([...RAW_STR.map(r=>r.campaign),...RAW_PLC.map(r=>r.campaign)])].filter(Boolean).sort();
+  ['a_port','b_port'].forEach(id=>{
+    const s=document.getElementById(id);
+    while(s.options.length>1)s.remove(1);
+    ports.forEach(p=>{const o=document.createElement('option');o.value=p;o.text=p;s.appendChild(o);});
+  });
+  ['a_cat','b_cat'].forEach(id=>{
+    const s=document.getElementById(id);
+    while(s.options.length>1)s.remove(1);
+    cats.forEach(c=>{const o=document.createElement('option');o.value=c;o.text=c;s.appendChild(o);});
+  });
+  const bcgVals=[...new Set([...RAW_STR.map(r=>r.bcg),...RAW_PLC.map(r=>r.bcg)])].filter(Boolean).sort();
+  ['a_bcg','b_bcg'].forEach(id=>{
+    const s=document.getElementById(id);
+    while(s.options.length>1)s.remove(1);
+    bcgVals.forEach(v=>{const o=document.createElement('option');o.value=v;o.text=v;s.appendChild(o);});
+  });
+  ['a_camp','b_camp'].forEach(id=>{
+    const s=document.getElementById(id);
+    while(s.options.length>1)s.remove(1);
+    ALL_CAMPS.forEach(c=>{const o=document.createElement('option');o.value=c;o.text=c.length>42?c.slice(0,42)+'…':c;s.appendChild(o);});
+  });
+  // Hide placement tab if no placement data
+  const hasPlc=RAW_PLC.length>0;
+  const tabs=document.querySelectorAll('.tab');
+  if(tabs[1])tabs[1].style.display=hasPlc?'':'none';
+  if(!hasPlc&&currentTab==='placement'){
+    currentTab='str';
+    if(tabs[0])tabs[0].classList.add('active');
+    if(tabs[1])tabs[1].classList.remove('active');
+    document.getElementById('panel-str').classList.add('active');
+    document.getElementById('panel-placement').classList.remove('active');
+  }
+  document.getElementById('uploadOverlay').style.display='none';
+  document.getElementById('dashWrap').style.display='';
+  document.getElementById('replaceBtn').style.display='';
+  document.getElementById('loading').style.display='none';
+  applyFilters();
+}
+
+// ── INIT ──────────────────────────────────────────────────
+async function init(){
+  // STR trend metric toggles (max 4 selectable)
+  const tw=document.getElementById('strMetricToggles');
+  STR_TREND_METRICS.forEach((m,i)=>{
+    const b=document.createElement('div');
+    b.className='metric-pill'+(i===0?' sel-0':'');
+    b.textContent=m.label;b.dataset.key=m.key;
+    b.onclick=()=>toggleTrendMetric(m.key,b);
+    tw.appendChild(b);
+  });
+  // PLC placement toggles
+  const pw=document.getElementById('plcPlcToggles');
+  [{k:'TOS',c:'tos'},{k:'ROS',c:'ros'},{k:'PP',c:'pp'}].forEach(p=>{
+    const b=document.createElement('div');b.className='plc-tog on '+p.c;b.textContent=p.k;b.dataset.plc=p.k;
+    b.onclick=()=>{
+      const on=b.classList.contains('on');
+      if(on&&selPlcs.length===1)return;
+      if(on){selPlcs=selPlcs.filter(x=>x!==p.k);b.classList.remove('on');}
+      else{selPlcs.push(p.k);b.classList.add('on');}
+      renderPlcChart();
+    };
+    pw.appendChild(b);
+  });
+  buildMetricPills();
+  buildTblFilters('str','a');buildTblFilters('str','b');
+  buildTblFilters('plc','a');buildTblFilters('plc','b');
+  // Show upload screen — user must upload or choose to load sample data
+  document.getElementById('uploadOverlay').style.display='flex';
+  document.getElementById('loading').style.display='none';
+}
+
+// ── TREND METRIC TOGGLES ─────────────────────────────────
+function toggleTrendMetric(key,btn){
+  const idx=activeTrendMetrics.indexOf(key);
+  if(idx>=0){
+    if(activeTrendMetrics.length<=1)return;
+    activeTrendMetrics.splice(idx,1);
+    btn.className='metric-pill';
+  }else{
+    if(activeTrendMetrics.length>=4)return;
+    activeTrendMetrics.push(key);
+  }
+  // recompute classes
+  document.querySelectorAll('#strMetricToggles .metric-pill').forEach(b=>{
+    const ki=activeTrendMetrics.indexOf(b.dataset.key);
+    b.className='metric-pill'+(ki>=0?' sel-'+ki:'')+(activeTrendMetrics.length>=4&&ki<0?' maxed':'');
+  });
+  renderTrend();
+}
+
+// ── METRIC PILLS (PLC chart) ──────────────────────────────
+function buildMetricPills(){
+  const w=document.getElementById('plcMetricPills');w.innerHTML='';
+  PLC_METRICS.forEach(m=>{
+    const i=selMets.indexOf(m.key);const maxed=selMets.length>=4&&i<0;
+    const p=document.createElement('div');
+    p.className='metric-pill'+(i>=0?' sel-'+i:'')+(maxed?' maxed':'');
+    p.textContent=m.label;p.dataset.key=m.key;p.onclick=()=>toggleMet(m.key);
+    w.appendChild(p);
+  });
+  updateLegend();
+}
+function toggleMet(key){
+  const i=selMets.indexOf(key);
+  if(i>=0){if(selMets.length<=1)return;selMets.splice(i,1);}
+  else{if(selMets.length>=4)return;selMets.push(key);}
+  buildMetricPills();renderPlcChart();
+}
+function updateLegend(){
+  const n=document.getElementById('plcLegendNote');
+  const l=selMets.map((k,i)=>{const m=PLC_METRICS.find(x=>x.key===k);return`<span style="color:${MC[i]};font-weight:700">${m.label}</span>`;});
+  n.innerHTML=l.join(' · ')+'&ensp;|&ensp;<span style="color:var(--text3)">TOS=solid · ROS=dashed · PP=dotted</span>';
+}
+
+// ── TABLE FILTER BARS ─────────────────────────────────────
+function buildTblFilters(report,p){
+  const fields=report==='str'?STR_MF_FIELDS:PLC_MF_FIELDS;
+  const wr=document.getElementById(report+'-tfl-'+p);if(!wr)return;
+  const ph=report==='str'?'Search term, targeting, campaign…':'Campaign, portfolio, category…';
+  wr.innerHTML=`
+    <span class="tfl">Search</span>
+    <input class="srch" id="tfl-srch-${report}-${p}" placeholder="${ph}" oninput="filterTbl('${report}','${p}')" style="width:220px;">
+    <div class="tfsep"></div>
+    <span class="tfl">KPI Filter</span>
+    <div class="metric-filter">
+      <select class="mf-sel" id="tfl-mf-field-${report}-${p}">
+        ${fields.map(f=>`<option value="${f.key}">${f.label}</option>`).join('')}
+      </select>
+      <select class="mf-op" id="tfl-mf-op-${report}-${p}">
+        <option>></option><option>>=</option><option>&lt;</option><option>&lt;=</option><option>=</option>
+      </select>
+      <input class="mf-val" id="tfl-mf-val-${report}-${p}" type="number" placeholder="value" step="any">
+      <button class="mf-add" onclick="addMF('${report}','${p}')">+ Add</button>
+    </div>
+    <div class="mf-active-wrap" id="tfl-mftags-${report}-${p}"></div>`;
+}
+function getMFArr(report,p){
+  if(report==='str'&&p==='a')return mfA_str;if(report==='str'&&p==='b')return mfB_str;
+  if(report==='plc'&&p==='a')return mfA_plc;return mfB_plc;
+}
+function addMF(report,p){
+  const field=document.getElementById('tfl-mf-field-'+report+'-'+p).value;
+  const op=document.getElementById('tfl-mf-op-'+report+'-'+p).value;
+  const val=parseFloat(document.getElementById('tfl-mf-val-'+report+'-'+p).value);
+  if(isNaN(val))return;
+  const fields=report==='str'?STR_MF_FIELDS:PLC_MF_FIELDS;
+  const lbl=fields.find(f=>f.key===field)?.label||field;
+  getMFArr(report,p).push({field,op,val,lbl});
+  renderMFTags(report,p);filterTbl(report,p);
+  document.getElementById('tfl-mf-val-'+report+'-'+p).value='';
+}
+function renderMFTags(report,p){
+  const mfArr=getMFArr(report,p);
+  const tags=document.getElementById('tfl-mftags-'+report+'-'+p);if(!tags)return;
+  tags.className='mf-active-wrap'+(mfArr.length?' has-filters':'');
+  tags.innerHTML=mfArr.map((f,i)=>
+    `<span class="mf-tag" onclick="removeMF('${report}','${p}',${i})">${f.lbl} ${f.op} ${f.val} ✕</span>`
+  ).join('');
+}
+function removeMF(report,p,i){
+  getMFArr(report,p).splice(i,1);renderMFTags(report,p);filterTbl(report,p);
+}
+function applyMF(rows,mfArr){
+  if(!mfArr.length)return rows;
+  const pctFields=['acos','ctr','cvr','cr','is_share'];
+  return rows.filter(r=>mfArr.every(f=>{
+    const v=r[f.field]||0;
+    let fv=pctFields.includes(f.field)?f.val/100:f.val;
+    if(f.op==='>')return v>fv;if(f.op==='>=')return v>=fv;
+    if(f.op==='<')return v<fv;if(f.op==='<=')return v<=fv;
+    return Math.abs(v-fv)<1e-9;
+  }));
+}
+
+// ── FILTER HELPERS ────────────────────────────────────────
+function gf(p){
+  return{
+    from:document.getElementById(p+'_from').value,
+    to:document.getElementById(p+'_to').value,
+    port:document.getElementById(p+'_port').value,
+    cat:document.getElementById(p+'_cat').value,
+    bcg:document.getElementById(p+'_bcg').value,
+    camp:(document.getElementById(p+'_camp')||{}).value||'',
+    match:(document.getElementById(p+'_match')||{}).value||'',
+    plc:(document.getElementById(p+'_plc')||{}).value||'',
+  };
+}
+function fd(data,f,isPlc=false){
+  return data.filter(r=>{
+    if(f.from&&r.Date<f.from)return false;
+    if(f.to&&r.Date>f.to)return false;
+    if(f.port&&r.portfolio!==f.port)return false;
+    if(f.cat&&r.category!==f.cat)return false;
+    if(f.bcg&&r.bcg!==f.bcg)return false;
+    if(f.camp&&r.campaign!==f.camp)return false;
+    if(!isPlc&&f.match&&r.match_type!==f.match)return false;
+    if(f.plc&&r.placement_short!==f.plc)return false;
+    return true;
+  });
+}
+
+function fmtDateRange(f){
+  const d=s=>s?new Date(s).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'-';
+  return d(f.from)+' – '+d(f.to);
+}
+
+function applyFilters(){
+  const fa=gf('a'),fb=gf('b');
+  DA_STR=fd(RAW_STR,fa,false);DA_PLC=fd(RAW_PLC,fa,true);
+  DB_STR=cmpMode?fd(RAW_STR,fb,false):[];DB_PLC=cmpMode?fd(RAW_PLC,fb,true):[];
+  GA_STR=aggSTR(DA_STR);GA_PLC=aggPLC(DA_PLC);
+  GB_STR=cmpMode?aggSTR(DB_STR):[];GB_PLC=cmpMode?aggPLC(DB_PLC):[];
+  FA_STR=applyMF([...GA_STR],mfA_str);FA_PLC=applyMF([...GA_PLC],mfA_plc);
+  FB_STR=applyMF([...GB_STR],mfB_str);FB_PLC=applyMF([...GB_PLC],mfB_plc);
+  document.getElementById('dateDisplay').textContent=fmtDateRange(fa);
+  updLayout();
+  renderKPIs('str-kpi-a',DA_STR,DB_STR,true,'a');
+  renderKPIs('plc-kpi-a',DA_PLC,DB_PLC,false,'a');
+  if(cmpMode){renderKPIs('str-kpi-b',DB_STR,[],true,'b');renderKPIs('plc-kpi-b',DB_PLC,[],false,'b');}
+  pgA_str=1;pgB_str=1;pgA_plc=1;pgB_plc=1;
+  renderStr('a');if(cmpMode)renderStr('b');
+  renderPlc('a');if(cmpMode)renderPlc('b');
+  renderTrend();
+  if(currentTab==='placement')renderPlcChart();
+}
+
+function updLayout(){
+  const c=cmpMode;
+  const fa=gf('a'),fb=gf('b');
+  const lA=fmtDateRange(fa),lB=fmtDateRange(fb);
+  document.getElementById('str-tbl-grid').className='cmp-tables '+(c?'two':'one');
+  document.getElementById('plc-tbl-grid').className='cmp-tables '+(c?'two':'one');
+  document.getElementById('str-col-b').style.display=c?'':'none';
+  document.getElementById('plc-col-b').style.display=c?'':'none';
+  document.getElementById('str-chart-single').style.display=c?'none':'';
+  document.getElementById('str-chart-a').style.display=c?'':'none';
+  document.getElementById('plc-chart-single').style.display=c?'none':'';
+  document.getElementById('plc-chart-a').style.display=c?'':'none';
+  if(c){
+    document.getElementById('str-chart-lbl-a').textContent=lA;
+    document.getElementById('str-chart-lbl-b').textContent=lB;
+    document.getElementById('plc-chart-lbl-a').textContent=lA;
+    document.getElementById('plc-chart-lbl-b').textContent=lB;
+  }
+  document.getElementById('str-kpi-row').className='kpi-row '+(c?'two':'one');
+  document.getElementById('plc-kpi-row').className='kpi-row '+(c?'two':'one');
+  let sb=document.getElementById('str-kpi-b');
+  if(c&&!sb){sb=document.createElement('div');sb.className='kpi-section';sb.id='str-kpi-b';document.getElementById('str-kpi-row').appendChild(sb);}
+  else if(!c&&sb)sb.remove();
+  let pb=document.getElementById('plc-kpi-b');
+  if(c&&!pb){pb=document.createElement('div');pb.className='kpi-section';pb.id='plc-kpi-b';document.getElementById('plc-kpi-row').appendChild(pb);}
+  else if(!c&&pb)pb.remove();
+  // Label tables with actual date ranges
+  document.getElementById('str-lbl-a').textContent=c?'Search Terms — '+lA:'Search Terms';
+  document.getElementById('plc-lbl-a').textContent=c?'Placements — '+lA:'Placements';
+  if(c){
+    document.getElementById('str-lbl-b').textContent='Search Terms — '+lB;
+    document.getElementById('plc-lbl-b').textContent='Placements — '+lB;
+  }
+}
+
+// ── AGGREGATION ───────────────────────────────────────────
+function aggSTR(data){
+  const map={};
+  data.forEach(r=>{
+    const k=r.Targeting+'|'+r.portfolio+'|'+r.match_type+'|'+r.bcg+'|'+r.targeting_display+'|'+r.search_term+'|'+r.campaign;
+    if(!map[k])map[k]={targeting_display:r.targeting_display,search_term:r.search_term,Targeting:r.Targeting,portfolio:r.portfolio,campaign:r.campaign,match_type:r.match_type,bcg:r.bcg,category:r.category,Impressions:0,Clicks:0,Spend:0,orders:0,units:0,sales:0,is_s:0,ir_s:0,n:0};
+    const e=map[k];e.Impressions+=r.Impressions||0;e.Clicks+=r.Clicks||0;e.Spend+=r.Spend||0;e.orders+=r.orders||0;e.units+=r.units||0;e.sales+=r.sales||0;e.is_s+=r.is_share||0;e.ir_s+=r.is_rank||0;e.n++;
+  });
+  return Object.values(map).map(r=>{r.ctr=r.Impressions>0?r.Clicks/r.Impressions:0;r.cpc=r.Clicks>0?r.Spend/r.Clicks:0;r.acos=r.sales>0?r.Spend/r.sales:0;r.roas=r.Spend>0?r.sales/r.Spend:0;r.cvr=r.Clicks>0?r.orders/r.Clicks:0;r.is_share=r.n>0?r.is_s/r.n:0;r.is_rank=r.n>0?r.ir_s/r.n:0;return r;});
+}
+function aggPLC(data){
+  const map={};
+  data.forEach(r=>{
+    const k=r.campaign+'|'+r.placement_short;
+    if(!map[k])map[k]={campaign:r.campaign,portfolio:r.portfolio,placement_short:r.placement_short,bcg:r.bcg||'',category:r.category||'',Impressions:0,Clicks:0,Spend:0,orders:0,sales:0,units:0};
+    const e=map[k];e.Impressions+=r.Impressions||0;e.Clicks+=r.Clicks||0;e.Spend+=r.Spend||0;e.orders+=r.orders||0;e.sales+=r.sales||0;e.units+=r.units||0;
+  });
+  return Object.values(map).map(r=>{r.ctr=r.Impressions>0?r.Clicks/r.Impressions:0;r.cpc=r.Clicks>0?r.Spend/r.Clicks:0;r.acos=r.sales>0?r.Spend/r.sales:0;r.roas=r.Spend>0?r.sales/r.Spend:0;r.cr=r.Clicks>0?r.orders/r.Clicks:0;return r;});
+}
+function sumK(data){
+  const s={Impressions:0,Clicks:0,Spend:0,orders:0,sales:0,units:0};
+  data.forEach(r=>{s.Impressions+=r.Impressions||0;s.Clicks+=r.Clicks||0;s.Spend+=r.Spend||0;s.orders+=r.orders||0;s.sales+=r.sales||0;s.units+=r.units||0;});
+  s.ctr=s.Impressions>0?s.Clicks/s.Impressions:0;s.cpc=s.Clicks>0?s.Spend/s.Clicks:0;s.acos=s.sales>0?s.Spend/s.sales:0;s.roas=s.Spend>0?s.sales/s.Spend:0;const _ord=s.orders||s.units||0;s.cvr=s.Clicks>0?_ord/s.Clicks:0;
+  return s;
+}
+
+// ── FORMATTING ────────────────────────────────────────────
+const fN=n=>n>=1e7?(n/1e7).toFixed(1)+'Cr':n>=1e5?(n/1e5).toFixed(1)+'L':n>=1e3?(n/1e3).toFixed(1)+'K':Math.round(n).toLocaleString('en-IN');
+const fR=n=>'₹'+fN(n);const fP=n=>(n*100).toFixed(2)+'%';const fX=n=>n.toFixed(2)+'x';
+function fmtM(v,fmt){if(fmt==='rs')return fR(v);if(fmt==='pct')return fP(v);if(fmt==='x')return fX(v);return fN(v);}
+function fmtFull(v,fmt){
+  if(fmt==='rs')return '₹'+v.toLocaleString('en-IN',{maximumFractionDigits:0});
+  if(fmt==='pct')return (v*100).toFixed(2)+'%';
+  if(fmt==='x')return v.toFixed(3)+'x';
+  return v.toLocaleString('en-IN',{maximumFractionDigits:0});
+}
+
+// ── KPI CARDS ─────────────────────────────────────────────
+function renderKPIs(elId,curr,cmp,isSTR,period){
+  const el=document.getElementById(elId);if(!el)return;
+  const s=sumK(curr),ps=cmp&&cmp.length?sumK(cmp):null;
+  const showDelta=cmpMode&&period==='a'&&ps;
+  const fa=gf('a'),fb=gf('b');
+  const pLabel=period==='b'?fmtDateRange(fb):fmtDateRange(fa);
+  const pCls=period==='b'?'b':'a';
+  const defs=[
+    ['Impressions',fN(s.Impressions),'ks-blue',s.Impressions,ps?.Impressions,true],
+    ['Clicks',fN(s.Clicks),'ks-cyan',s.Clicks,ps?.Clicks,true],
+    ['CTR',fP(s.ctr),'ks-cyan',s.ctr,ps?.ctr,true],
+    ['Spend ₹',fR(s.Spend),'ks-orange',s.Spend,ps?.Spend,false],
+    ['CPC ₹',fR(s.cpc),'ks-amber',s.cpc,ps?.cpc,false],
+    [(window._STR_CONV_LABEL||'Orders'),fN(s.orders||s.units||0),'ks-green',s.orders||s.units||0,ps?(ps.orders||ps.units||0):null,true],
+    ...(!isSTR?[['Units',fN(s.units),'ks-green',s.units,ps?.units,true]]:[]),
+    ['Sales ₹',fR(s.sales),'ks-green',s.sales,ps?.sales,true],
+    ['ACoS',fP(s.acos),s.acos>0.5?'ks-red':s.acos>0.3?'ks-amber':'ks-green',s.acos,ps?.acos,false],
+    ['RoAS',fX(s.roas),s.roas<1?'ks-red':s.roas<2?'ks-amber':'ks-green',s.roas,ps?.roas,true],
+    ...(isSTR?[['Ad CR%',fP(s.cvr),'ks-cyan',s.cvr,ps?.cvr,true]]:[]),
+  ];
+  const hdr=`<div class="kpi-sec-hdr"><div class="period-tag ${pCls}">${pLabel}</div><span class="kpi-count">${curr.length.toLocaleString()} data pts</span></div>`;
+  const cells=defs.map(([lbl,val,cls,cv,pv,hib])=>{
+    let dh='<div class="kpi-delta">—</div>';
+    if(showDelta&&pv!=null&&pv!==0){const dv=(cv-pv)/Math.abs(pv);const good=hib?dv>=0:dv<=0;const sign=dv>=0?'▲':'▼';dh=`<div class="kpi-delta ${good?'pos':'neg'}">${sign}${Math.abs(dv*100).toFixed(1)}% vs B</div>`;}
+    return `<div class="kpi-cell ${cls}"><div class="kpi-label">${lbl}</div><div class="kpi-val">${val}</div>${dh}<div class="kpi-stripe"></div></div>`;
+  }).join('');
+  el.innerHTML=hdr+'<div class="kpi-grid">'+cells+'</div>';
+}
+
+// ── CHART DEFAULTS ────────────────────────────────────────
+function cDefaults(){
+  return{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{labels:{color:'#4a5470',font:{size:10},boxWidth:20},position:'top'},
+      tooltip:{backgroundColor:'#fff',titleColor:'#1a2035',bodyColor:'#4a5470',borderColor:'#e2e5ef',borderWidth:1,padding:10}
+    },
+    scales:{
+      x:{ticks:{color:'#8892ae',font:{size:10},maxTicksLimit:14,maxRotation:45},grid:{color:'#eef0f6'}},
+      y:{ticks:{color:'#8892ae',font:{size:10}},grid:{color:'#eef0f6'}}
+    }
+  };
+}
+
+// ── STR TREND CHART (multi-metric, max 4) ────────────────
+function buildDailySTR(data,metric){
+  const map={};
+  data.forEach(r=>{
+    if(!map[r.Date])map[r.Date]={s:0,cl:0,im:0,sp:0,or:0,sa:0};
+    const v=map[r.Date];
+    v.cl+=r.Clicks||0;v.im+=r.Impressions||0;v.sp+=r.Spend||0;v.or+=(r.orders||r.units||0);v.sa+=r.sales||0;
+    if(!['ctr','acos','cpc','roas','cvr'].includes(metric))v.s+=r[metric]||0;
+  });
+  const dates=Object.keys(map).sort();
+  const vals=dates.map(d=>{
+    const v=map[d];
+    if(metric==='ctr')return v.im>0?v.cl/v.im:0;
+    if(metric==='acos')return v.sa>0?v.sp/v.sa:0;
+    if(metric==='cpc')return v.cl>0?v.sp/v.cl:0;
+    if(metric==='roas')return v.sp>0?v.sa/v.sp:0;
+    if(metric==='cvr')return v.cl>0?v.or/v.cl:0;
+    if(metric==='orders')return v.or||v.un;
+    if(metric==='sales')return v.sa;
+    if(metric==='Spend')return v.sp;
+    if(metric==='Clicks')return v.cl;
+    if(metric==='Impressions')return v.im;
+    return v.s;
+  });
+  return{dates,vals};
+}
+
+function renderTrend(){
+  function buildChartForData(data,canvasId,dashed){
+    const dates0=[]; const datasetsOut=[]; const yAxes={};
+    activeTrendMetrics.forEach((mKey,mi)=>{
+      const mDef=STR_TREND_METRICS.find(x=>x.key===mKey);
+      const col=mDef?mDef.col:MC[mi%4];
+      const fmt=mDef?mDef.fmt:'num';
+      const axId='y'+mi;
+      yAxes[axId]={
+        type:'linear',display:true,position:mi%2===0?'left':'right',
+        grid:{color:mi===0?'#eef0f6':'transparent',drawOnChartArea:mi===0},
+        ticks:{color:col,font:{size:9},callback:v=>fmtFull(v,fmt)},
+        title:{display:activeTrendMetrics.length>1,text:mDef?.label||mKey,color:col,font:{size:9}},
+      };
+      const{dates,vals}=buildDailySTR(data,mKey);
+      if(mi===0&&dates.length)dates0.push(...dates);
+      const ds={label:mDef?.label||mKey,data:vals,borderColor:col,backgroundColor:col+'14',fill:mi===0&&activeTrendMetrics.length===1,tension:0,pointRadius:2,pointBackgroundColor:col,borderWidth:2,yAxisID:axId};
+      if(dashed)ds.borderDash=[5,3];
+      datasetsOut.push(ds);
+    });
+    const labels=(dates0.length?dates0:Object.keys(buildDailySTR(data,activeTrendMetrics[0]).dates||{}).sort()).map(d=>d.slice(5));
+    const {dates:dAll}=buildDailySTR(data,activeTrendMetrics[0]);
+    const opts=cDefaults();
+    opts.plugins.legend.display=activeTrendMetrics.length>1;
+    opts.plugins.tooltip.callbacks={
+      label:ctx=>{const v=ctx.parsed.y;if(v==null)return null;const mi=ctx.datasetIndex%(dashed?1:activeTrendMetrics.length);const mDef=STR_TREND_METRICS.find(x=>x.key===activeTrendMetrics[ctx.datasetIndex]);return(ctx.dataset.label||'')+': '+fmtFull(v,mDef?.fmt||'num');}
+    };
+    delete opts.scales.y;
+    Object.assign(opts.scales,yAxes);
+    return{labels:dAll.map(d=>d.slice(5)),datasets:datasetsOut,opts};
+  }
+  if(!cmpMode){
+    const{labels,datasets,opts}=buildChartForData(DA_STR,'trendChart',false);
+    if(trendInst)trendInst.destroy();
+    trendInst=new Chart(document.getElementById('trendChart').getContext('2d'),{type:'line',data:{labels,datasets},options:opts});
+    if(trendInstA){trendInstA.destroy();trendInstA=null;}
+    if(trendInstB){trendInstB.destroy();trendInstB=null;}
+  }else{
+    if(trendInst){trendInst.destroy();trendInst=null;}
+    const{labels:lA,datasets:dsA,opts:oA}=buildChartForData(DA_STR,'trendChartA',false);
+    if(trendInstA)trendInstA.destroy();
+    trendInstA=new Chart(document.getElementById('trendChartA').getContext('2d'),{type:'line',data:{labels:lA,datasets:dsA},options:oA});
+    if(DB_STR.length){
+      const{labels:lB,datasets:dsB,opts:oB}=buildChartForData(DB_STR,'trendChartB',true);
+      if(trendInstB)trendInstB.destroy();
+      trendInstB=new Chart(document.getElementById('trendChartB').getContext('2d'),{type:'line',data:{labels:lB,datasets:dsB},options:oB});
+    }
+  }
+}
+
+// ── PLC TREND CHART ───────────────────────────────────────
+function buildPlcDaily(data){
+  const map={};
+  data.forEach(r=>{
+    if(!map[r.Date])map[r.Date]={};
+    const p=r.placement_short;
+    if(!map[r.Date][p])map[r.Date][p]={Impressions:0,Clicks:0,Spend:0,orders:0,sales:0,units:0};
+    const e=map[r.Date][p];e.Impressions+=r.Impressions||0;e.Clicks+=r.Clicks||0;e.Spend+=r.Spend||0;e.orders+=r.orders||0;e.sales+=r.sales||0;e.units+=r.units||0;
+  });
+  return map;
+}
+function deriveM(row,key){
+  if(!row)return null;
+  if(key==='ctr')return row.Impressions>0?row.Clicks/row.Impressions:0;
+  if(key==='acos')return row.sales>0?row.Spend/row.sales:0;
+  if(key==='cpc')return row.Clicks>0?row.Spend/row.Clicks:0;
+  if(key==='roas')return row.Spend>0?row.sales/row.Spend:0;
+  if(key==='cr')return row.Clicks>0?row.orders/row.Clicks:0;
+  return row[key]||0;
+}
+function buildPlcDatasets(mapData,datesA){
+  const datasets=[],yAxes={};
+  selMets.forEach((mKey,mi)=>{
+    const mDef=PLC_METRICS.find(x=>x.key===mKey);const col=MC[mi];
+    const axId='y'+mi;
+    yAxes[axId]={type:'linear',display:true,position:mi<2?'left':'right',grid:{color:mi===0?'#eef0f6':'transparent',drawOnChartArea:mi===0},ticks:{color:col,font:{size:9},callback:v=>fmtM(v,mDef.fmt)},title:{display:true,text:mDef.label,color:col,font:{size:9}}};
+    selPlcs.forEach(plc=>{
+      const vals=datesA.map(d=>deriveM(mapData[d]&&mapData[d][plc],mKey));
+      datasets.push({label:mDef.label+' · '+plc,data:vals,borderColor:col,borderDash:PLC_DASH[plc],pointRadius:2,tension:0,fill:false,yAxisID:axId,borderWidth:2,spanGaps:true});
+    });
+  });
+  return{datasets,yAxes};
+}
+function mkPlcOpts(yAxes){
+  return{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{display:true,position:'top',labels:{color:'#4a5470',font:{size:9},boxWidth:16,padding:5,generateLabels:chart=>chart.data.datasets.map((ds,i)=>{return{text:ds.label,strokeStyle:ds.borderColor,fillStyle:ds.borderColor+'30',borderDash:ds.borderDash,lineWidth:2,hidden:false,datasetIndex:i}})}},
+      tooltip:{backgroundColor:'#fff',titleColor:'#1a2035',bodyColor:'#4a5470',borderColor:'#e2e5ef',borderWidth:1,padding:10,
+        callbacks:{title:items=>'Date: '+items[0].label,label:ctx=>{const v=ctx.parsed.y;if(v==null||v===undefined)return null;const mi=Math.floor(ctx.datasetIndex/selPlcs.length)%selMets.length;const mDef=PLC_METRICS.find(x=>x.key===selMets[mi])||{fmt:'num'};return ctx.dataset.label+': '+fmtFull(v,mDef.fmt);}}
+      }
+    },
+    scales:{x:{ticks:{color:'#8892ae',font:{size:9},maxRotation:45,maxTicksLimit:14},grid:{color:'#eef0f6'}},...yAxes}
+  };
+}
+function renderPlcChart(){
+  const mapA=buildPlcDaily(DA_PLC);const datesA=Object.keys(mapA).sort();
+  if(!cmpMode){
+    const{datasets,yAxes}=buildPlcDatasets(mapA,datesA);
+    if(plcTrendInst)plcTrendInst.destroy();
+    plcTrendInst=new Chart(document.getElementById('plcTrendChart').getContext('2d'),{type:'line',data:{labels:datesA.map(d=>d.slice(5)),datasets},options:mkPlcOpts(yAxes)});
+    if(plcInstA){plcInstA.destroy();plcInstA=null;}if(plcInstB){plcInstB.destroy();plcInstB=null;}
+  }else{
+    if(plcTrendInst){plcTrendInst.destroy();plcTrendInst=null;}
+    const{datasets:dsA,yAxes:yA}=buildPlcDatasets(mapA,datesA);
+    if(plcInstA)plcInstA.destroy();
+    plcInstA=new Chart(document.getElementById('plcTrendChartA').getContext('2d'),{type:'line',data:{labels:datesA.map(d=>d.slice(5)),datasets:dsA},options:mkPlcOpts(yA)});
+    if(DB_PLC.length){
+      const mapB=buildPlcDaily(DB_PLC);const datesB=Object.keys(mapB).sort();
+      const{datasets:dsB,yAxes:yB}=buildPlcDatasets(mapB,datesB);
+      if(plcInstB)plcInstB.destroy();
+      plcInstB=new Chart(document.getElementById('plcTrendChartB').getContext('2d'),{type:'line',data:{labels:datesB.map(d=>d.slice(5)),datasets:dsB},options:mkPlcOpts(yB)});
+    }
+  }
+  updateLegend();
+}
+
+// ── CAMPAIGN MODAL ────────────────────────────────────────
+function openCampModal(stEnc,tgEnc,period){
+  const st=decodeURIComponent(stEnc);const tg=decodeURIComponent(tgEnc);
+  const data=period==='a'?DA_STR:DB_STR;
+  showCampModal(st,tg,data);
+}
+function showCampModal(searchTerm,targeting,data){
+  // Group by campaign, sum metrics
+  const campMap={};
+  data.filter(r=>r.search_term===searchTerm&&r.Targeting===targeting).forEach(r=>{
+    if(!campMap[r.campaign])campMap[r.campaign]={Impressions:0,Clicks:0,Spend:0,orders:0,sales:0};
+    const e=campMap[r.campaign];
+    e.Impressions+=r.Impressions||0;e.Clicks+=r.Clicks||0;e.Spend+=r.Spend||0;e.orders+=r.orders||0;e.sales+=r.sales||0;
+  });
+  const camps=Object.entries(campMap).map(([name,m])=>{
+    m.acos=m.sales>0?m.Spend/m.sales:0;m.roas=m.Spend>0?m.sales/m.Spend:0;m.name=name;return m;
+  }).sort((a,b)=>b.orders-a.orders);
+  // Max orders campaign
+  const maxOrdCamp=camps[0]?.name;
+  document.getElementById('campModalTitle').textContent=`"${searchTerm}" — ${camps.length} campaign${camps.length>1?'s':''}`;
+  document.getElementById('campModalBody').innerHTML=camps.map(c=>{
+    const bleeding=c.acos>1;const isTop=c.name===maxOrdCamp;
+    return`<div class="camp-row">
+      <div class="camp-name">${c.name} ${bleeding?'<span class="bleeding">⚠ Bleeding (ACoS>100%)</span>':''} ${isTop&&camps.length>1?'<span style="color:var(--accent4);font-weight:600">★ Top orders</span>':''}</div>
+      <div class="camp-metrics">
+        <div class="camp-metric"><span class="camp-metric-label">Impressions</span><span class="camp-metric-val">${fN(c.Impressions)}</span></div>
+        <div class="camp-metric"><span class="camp-metric-label">Clicks</span><span class="camp-metric-val">${fN(c.Clicks)}</span></div>
+        <div class="camp-metric"><span class="camp-metric-label">Spend</span><span class="camp-metric-val">${fR(c.Spend)}</span></div>
+        <div class="camp-metric"><span class="camp-metric-label">Orders</span><span class="camp-metric-val">${c.orders}</span></div>
+        <div class="camp-metric"><span class="camp-metric-label">Sales</span><span class="camp-metric-val">${fR(c.sales)}</span></div>
+        <div class="camp-metric"><span class="camp-metric-label">ACoS</span><span class="camp-metric-val ${bleeding?'bleeding':''}">${fP(c.acos)}</span></div>
+        <div class="camp-metric"><span class="camp-metric-label">RoAS</span><span class="camp-metric-val">${fX(c.roas)}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('campModal').style.display='flex';
+}
+function closeCampModal(){document.getElementById('campModal').style.display='none';}
+
+// ── TOTAL ROWS ────────────────────────────────────────────
+function makeTotalRowSTR(rows){
+  if(!rows.length)return '';
+  const t=sumK(rows);const is_avg=rows.reduce((a,r)=>a+(r.is_share||0),0)/rows.length;
+  return`<tr class="total-row"><td class="left" colspan="5">Σ Total (${rows.length.toLocaleString()} rows)</td>
+    <td class="num">${fN(t.Impressions)}</td><td class="num">${fP(is_avg)}</td>
+    <td class="num">${fN(t.Clicks)}</td><td class="num">${fP(t.ctr)}</td>
+    <td class="num">${fR(t.Spend)}</td><td class="num">${fR(t.cpc)}</td>
+    <td class="num">${(t.orders||t.units||0).toLocaleString()}</td><td class="num">${fR(t.sales)}</td>
+    <td class="num">${fP(t.acos)}</td><td class="num">${fX(t.roas)}</td>
+    <td class="num">${fP(t.cvr)}</td><td class="num">—</td></tr>`;
+}
+function makeTotalRowPLC(rows){
+  if(!rows.length)return '';const t=sumK(rows);
+  return`<tr class="total-row"><td class="left" colspan="5">Σ Total (${rows.length.toLocaleString()} rows)</td>
+    <td class="num">${fN(t.Impressions)}</td><td class="num">${fN(t.Clicks)}</td>
+    <td class="num">${fP(t.ctr)}</td><td class="num">${fR(t.Spend)}</td><td class="num">${fR(t.cpc)}</td>
+    <td class="num">${t.orders}</td><td class="num">${t.units}</td><td class="num">${fR(t.sales)}</td>
+    <td class="num">${fP(t.acos)}</td><td class="num">${fX(t.roas)}</td><td class="num">${fP(t.cvr)}</td></tr>`;
+}
+
+// ── STR TABLE ─────────────────────────────────────────────
+const STR_COLS=[
+  {id:'targeting_display',label:'Targeting',left:true},{id:'search_term',label:'Search Term',left:true},
+  {id:'portfolio',label:'Portfolio',left:true},{id:'match_type',label:'Match',left:true},{id:'bcg',label:'BCG',left:true},
+  {id:'Impressions',label:'Impr'},{id:'is_share',label:'IS%'},
+  {id:'Clicks',label:'Clicks'},{id:'ctr',label:'CTR%'},
+  {id:'Spend',label:'Spend ₹'},{id:'cpc',label:'CPC ₹'},{id:'orders',label:(window._STR_CONV_LABEL||'Orders')},
+  {id:'sales',label:'Sales ₹'},{id:'acos',label:'ACoS%'},{id:'roas',label:'RoAS'},{id:'cvr',label:'Ad CR%'},{id:'is_rank',label:'IS Rank'},
+];
+function bldStrHead(p){
+  const sc=p==='a'?sortA_str:sortB_str,sd=p==='a'?dirA_str:dirB_str;
+  document.getElementById('str-head-'+p).innerHTML=STR_COLS.map(c=>`<th class="${c.left?'left':''}" id="sth-${p}-${c.id}" onclick="sortStr('${p}','${c.id}')">${c.label}</th>`).join('');
+  const el=document.getElementById('sth-'+p+'-'+sc);if(el)el.className=(el.className||'')+' '+(sd>0?'sort-asc':'sort-desc');
+}
+function sortStr(p,col){
+  if(p==='a'){if(sortA_str===col)dirA_str*=-1;else{sortA_str=col;dirA_str=-1;}}
+  else{if(sortB_str===col)dirB_str*=-1;else{sortB_str=col;dirB_str=-1;}}
+  if(p==='a')pgA_str=1;else pgB_str=1;renderStr(p);
+}
+function filterTbl(report,p){
+  const q=(document.getElementById('tfl-srch-'+report+'-'+p)||{}).value||'';const ql=q.toLowerCase();
+  const src=p==='a'?(report==='str'?GA_STR:GA_PLC):(report==='str'?GB_STR:GB_PLC);
+  const mfArr=getMFArr(report,p);
+  let filtered;
+  if(report==='str'){
+    filtered=ql?src.filter(r=>(r.targeting_display||'').toLowerCase().includes(ql)||(r.search_term||'').toLowerCase().includes(ql)||(r.campaign||'').toLowerCase().includes(ql)||(r.portfolio||'').toLowerCase().includes(ql)):[...src];
+  }else{
+    filtered=ql?src.filter(r=>(r.campaign||'').toLowerCase().includes(ql)||(r.portfolio||'').toLowerCase().includes(ql)||(r.category||'').toLowerCase().includes(ql)):[...src];
+  }
+  filtered=applyMF(filtered,mfArr);
+  if(report==='str'){if(p==='a')FA_STR=filtered;else FB_STR=filtered;}
+  else{if(p==='a')FA_PLC=filtered;else FB_PLC=filtered;}
+  if(p==='a'){if(report==='str')pgA_str=1;else pgA_plc=1;}
+  else{if(report==='str')pgB_str=1;else pgB_plc=1;}
+  if(report==='str')renderStr(p);else renderPlc(p);
+}
+function filterStr(p){filterTbl('str',p);}
+function filterPlc(p){filterTbl('plc',p);}
+
+function renderStr(p){
+  bldStrHead(p);
+  const pp=parseInt(document.getElementById('str-pp-'+p).value);
+  const filt=p==='a'?FA_STR:FB_STR;
+  const sc=p==='a'?sortA_str:sortB_str,sd=p==='a'?dirA_str:dirB_str;
+  filt.sort((a,b)=>((a[sc]||0)-(b[sc]||0))*sd);
+  const pg=p==='a'?pgA_str:pgB_str;const tp=Math.ceil(filt.length/pp)||1;
+  const page=Math.max(1,Math.min(pg,tp));
+  if(p==='a')pgA_str=page;else pgB_str=page;
+  const slice=filt.slice((page-1)*pp,page*pp);
+  const asinRe=/^[A-Z0-9]{10}$/;
+  // bcgCls via getBcgCls()
+  const srcData=p==='a'?DA_STR:DB_STR;
+  const totalRow=makeTotalRowSTR(filt);
+  document.getElementById('str-body-'+p).innerHTML=totalRow+slice.map(r=>{
+    const isA=asinRe.test(r.targeting_display);
+    const info=ASIN_MAP[r.targeting_display];
+    const tCell=isA?`<a class="asin-link" href="${info?'https://'+info.url:'https://www.amazon.in/dp/'+r.targeting_display}" target="_blank" title="${info?info.title:r.targeting_display}">${r.targeting_display}</a>`:`<span title="${r.Targeting}">${(r.targeting_display||'').slice(0,36)}</span>`;
+    const mt=r.match_type==='-'?'Auto':r.match_type;
+    const campCountData=srcData.filter(x=>x.search_term===r.search_term&&x.Targeting===r.Targeting);
+    const camps=[...new Set(campCountData.map(x=>x.campaign))].filter(Boolean);
+    const stEnc=encodeURIComponent(r.search_term);const tgEnc=encodeURIComponent(r.Targeting);
+    const campLink=`<span class="asin-link" style="cursor:pointer;color:var(--accent);font-family:var(--font);font-size:10px;display:block;margin-top:2px;" onclick="openCampModal('${stEnc}','${tgEnc}','${p}')">${r.campaign?r.campaign.slice(0,24):''}&nbsp;<span style="color:var(--text3)">(${camps.length} camp${camps.length===1?'':'s'})</span></span>`;
+    // Search term: if starts with b0/B0, treat as ASIN — uppercase and link to PDP
+    const stRaw=r.search_term||'';
+    const stUp=stRaw.toUpperCase();
+    const stIsAsin=/^B0[A-Z0-9]{8}$/.test(stUp);
+    const stInfo=stIsAsin?ASIN_MAP[stUp]:null;
+    const stCell=stIsAsin
+      ?`<a class="asin-link" href="https://www.amazon.in/dp/${stUp}" target="_blank" title="${stInfo?stInfo.title:stUp}">${stUp}</a>`
+      :`<span title="${stRaw}">${stRaw.slice(0,28)}</span>`;
+    return`<tr>
+      <td class="left">${tCell}</td>
+      <td class="left">${stCell}${campLink}</td>
+      <td class="left">${r.portfolio||''}</td>
+      <td class="left"><span class="tag">${mt}</span></td>
+      <td class="left"><span class="badge ${getBcgCls(r.bcg)}">${r.bcg||''}</span></td>
+      <td class="num">${fN(r.Impressions)}</td>
+      <td class="num">${fP(r.is_share)}</td>
+      <td class="num">${fN(r.Clicks)}</td>
+      <td class="num">${fP(r.ctr)}</td>
+      <td class="num">${fR(r.Spend)}</td><td class="num">${fR(r.cpc)}</td>
+      <td class="num">${r.orders||r.units||0}</td><td class="num">${fR(r.sales)}</td>
+      <td class="num ${r.acos>0.5?'bad':r.acos>0.3?'warn':'good'}">${fP(r.acos)}</td>
+      <td class="num ${r.roas<1?'bad':r.roas<2?'warn':'good'}">${fX(r.roas)}</td>
+      <td class="num">${fP(r.cvr)}</td>
+      <td class="num">${r.is_rank>0?r.is_rank.toFixed(1):'—'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('str-pgi-'+p).textContent=`${filt.length.toLocaleString()} rows · Page ${page}/${tp}`;
+  document.getElementById('str-prev-'+p).disabled=page<=1;
+  document.getElementById('str-next-'+p).disabled=page>=tp;
+}
+function strPg(p,d){if(p==='a')pgA_str+=d;else pgB_str+=d;renderStr(p);}
+
+// ── PLC TABLE ─────────────────────────────────────────────
+const PLC_COLS=[
+  {id:'campaign',label:'Campaign',left:true},{id:'portfolio',label:'Portfolio',left:true},
+  {id:'placement_short',label:'Placement',left:true},{id:'bcg',label:'BCG',left:true},{id:'category',label:'Category',left:true},
+  {id:'Impressions',label:'Impr'},{id:'Clicks',label:'Clicks'},{id:'ctr',label:'CTR%'},
+  {id:'Spend',label:'Spend ₹'},{id:'cpc',label:'CPC ₹'},{id:'orders',label:(window._STR_CONV_LABEL||'Orders')},
+  {id:'units',label:'Units'},{id:'sales',label:'Sales ₹'},{id:'acos',label:'ACoS%'},
+  {id:'roas',label:'RoAS'},{id:'cr',label:'Ad CR%'},
+];
+function bldPlcHead(p){
+  const sc=p==='a'?sortA_plc:sortB_plc,sd=p==='a'?dirA_plc:dirB_plc;
+  document.getElementById('plc-head-'+p).innerHTML=PLC_COLS.map(c=>`<th class="${c.left?'left':''}" id="pth-${p}-${c.id}" onclick="sortPlc('${p}','${c.id}')">${c.label}</th>`).join('');
+  const el=document.getElementById('pth-'+p+'-'+sc);if(el)el.className=(el.className||'')+' '+(sd>0?'sort-asc':'sort-desc');
+}
+function sortPlc(p,col){
+  if(p==='a'){if(sortA_plc===col)dirA_plc*=-1;else{sortA_plc=col;dirA_plc=-1;}}
+  else{if(sortB_plc===col)dirB_plc*=-1;else{sortB_plc=col;dirB_plc=-1;}}
+  if(p==='a')pgA_plc=1;else pgB_plc=1;renderPlc(p);
+}
+function renderPlc(p){
+  bldPlcHead(p);
+  const pp=parseInt(document.getElementById('plc-pp-'+p).value);
+  const filt=p==='a'?FA_PLC:FB_PLC;
+  const sc=p==='a'?sortA_plc:sortB_plc,sd=p==='a'?dirA_plc:dirB_plc;
+  filt.sort((a,b)=>((a[sc]||0)-(b[sc]||0))*sd);
+  const pg=p==='a'?pgA_plc:pgB_plc;const tp=Math.ceil(filt.length/pp)||1;
+  const page=Math.max(1,Math.min(pg,tp));
+  if(p==='a')pgA_plc=page;else pgB_plc=page;
+  const slice=filt.slice((page-1)*pp,page*pp);
+  const pb={TOS:'badge-tos',ROS:'badge-ros',PP:'badge-pp'};
+  // bc via getBcgCls()
+  const totalRow=makeTotalRowPLC(filt);
+  document.getElementById('plc-body-'+p).innerHTML=totalRow+slice.map(r=>`<tr>
+    <td class="left" title="${r.campaign}">${r.campaign.slice(0,32)}</td>
+    <td class="left">${r.portfolio||''}</td>
+    <td class="left"><span class="badge ${pb[r.placement_short]||''}">${r.placement_short}</span></td>
+    <td class="left"><span class="badge ${getBcgCls(r.bcg)}">${r.bcg||''}</span></td>
+    <td class="left">${r.category||''}</td>
+    <td class="num">${fN(r.Impressions)}</td><td class="num">${fN(r.Clicks)}</td>
+    <td class="num">${fP(r.ctr)}</td><td class="num">${fR(r.Spend)}</td><td class="num">${fR(r.cpc)}</td>
+    <td class="num">${r.orders}</td><td class="num">${r.units}</td><td class="num">${fR(r.sales)}</td>
+    <td class="num ${r.acos>0.5?'bad':r.acos>0.3?'warn':'good'}">${fP(r.acos)}</td>
+    <td class="num ${r.roas<1?'bad':r.roas<2?'warn':'good'}">${fX(r.roas)}</td>
+    <td class="num">${fP(r.cr)}</td>
+  </tr>`).join('');
+  document.getElementById('plc-pgi-'+p).textContent=`${filt.length.toLocaleString()} rows · Page ${page}/${tp}`;
+  document.getElementById('plc-prev-'+p).disabled=page<=1;
+  document.getElementById('plc-next-'+p).disabled=page>=tp;
+}
+function plcPg(p,d){if(p==='a')pgA_plc+=d;else pgB_plc+=d;renderPlc(p);}
+
+// ── UI HELPERS ────────────────────────────────────────────
+function switchTab(tab){
+  currentTab=tab;
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='str')||(i===1&&tab==='placement')));
+  document.getElementById('panel-str').classList.toggle('active',tab==='str');
+  document.getElementById('panel-placement').classList.toggle('active',tab==='placement');
+  ['a','b'].forEach(p=>{
+    const mw=document.getElementById(p+'_match_wrap'),pw=document.getElementById(p+'_plc_wrap');
+    if(mw)mw.style.display=tab==='str'?'':'none';
+    if(pw)pw.style.display=tab==='placement'?'':'none';
+  });
+  if(tab==='placement')renderPlcChart();
+  if(tab==='str')renderTrend();
+}
+function toggleCompare(){
+  cmpMode=!cmpMode;
+  const btn=document.getElementById('cmpBtn');
+  btn.classList.toggle('on',cmpMode);btn.textContent=cmpMode?'✕ Close Compare':'⟳ Compare periods';
+  document.getElementById('fbarB').style.display=cmpMode?'':'none';
+  if(cmpMode){
+    const from=new Date(document.getElementById('a_from').value);
+    const to=new Date(document.getElementById('a_to').value);
+    const diff=to-from;
+    const bTo=new Date(from.getTime()-86400000);
+    const bFrom=new Date(bTo.getTime()-diff);
+    document.getElementById('b_from').value=bFrom.toISOString().slice(0,10);
+    document.getElementById('b_to').value=bTo.toISOString().slice(0,10);
+  }
+  applyFilters();
+}
+function setQuick(days,period,el){
+  const bar=period==='a'?document.getElementById('fbarA'):document.getElementById('fbarB');
+  bar.querySelectorAll('.qdb').forEach(b=>b.classList.remove('active'));el.classList.add('active');
+  const allDates=[...new Set([...RAW_STR.map(r=>r.Date),...RAW_PLC.map(r=>r.Date)])].sort();
+  const lastDate=allDates.length?allDates[allDates.length-1]:'2026-04-05';
+  const toD=new Date(lastDate);
+  const fromD=new Date(toD.getTime()-(days-1)*86400000);
+  document.getElementById(period+'_from').value=fromD.toISOString().slice(0,10);
+  document.getElementById(period+'_to').value=lastDate;
+  applyFilters();
+}
+window.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
