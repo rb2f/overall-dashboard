@@ -1853,7 +1853,7 @@ code { background: var(--surface2); border: 1px solid var(--border); border-radi
 
 <div class="topbar">
   <div class="topbar-brand">RB2F <em>×</em> Analytics Dashboard</div>
-  <div class="topbar-meta">rb2f / overall-dashboard</div>
+  <div class="topbar-meta">RB2F / overall-dashboard</div>
 </div>
 
 <div class="tabbar">
@@ -1868,7 +1868,7 @@ code { background: var(--surface2); border: 1px solid var(--border); border-radi
 
   <!-- HOME -->
   <div class="panel visible" id="panel-home">
-    <div class="home-eyebrow">rb2f / overall-dashboard</div>
+    <div class="home-eyebrow">RB2F / overall-dashboard</div>
     <div class="home-title">RB2F <em>×</em> Analytics<br>Dashboard</div>
     <div class="home-sub">Click a card — the dashboard opens right here, inline.</div>
     <div class="cards">
@@ -1884,7 +1884,6 @@ code { background: var(--surface2); border: 1px solid var(--border); border-radi
           <div class="card-desc">Full brand snapshot — overall sales, campaign performance, placements, STR, bleed detectors, and more in a single unified view.</div>
         </div>
         <div class="card-footer">
-          <span class="card-file">master.html</span>
           <span class="card-cta">Open →</span>
         </div>
       </div>
@@ -1900,7 +1899,6 @@ code { background: var(--surface2); border: 1px solid var(--border); border-radi
           <div class="card-desc">Analyze search query performance — impressions, clicks, cart adds, and purchase rates across your brand's keyword universe.</div>
         </div>
         <div class="card-footer">
-          <span class="card-file">SQP.html</span>
           <span class="card-cta">Open →</span>
         </div>
       </div>
@@ -1916,7 +1914,6 @@ code { background: var(--surface2); border: 1px solid var(--border); border-radi
           <div class="card-desc">Deep-dive into sponsored ads search term reports — ACOS, spend, ROAS, and conversion metrics with keyword-level granularity.</div>
         </div>
         <div class="card-footer">
-          <span class="card-file">STR.html</span>
           <span class="card-cta">Open →</span>
         </div>
       </div>
@@ -1932,16 +1929,9 @@ code { background: var(--surface2); border: 1px solid var(--border); border-radi
           <div class="card-desc">Plan monthly ad spend and day parting schedules — forecast pacing, set targets, monitor budget utilization in real time.</div>
         </div>
         <div class="card-footer">
-          <span class="card-file">budget-planner.html</span>
           <span class="card-cta">Open →</span>
         </div>
       </div>
-
-    </div>
-    <div class="home-bottom">
-      <div><div class="bstat-val">04</div><div class="bstat-label">Active dashboards</div></div>
-      <div><div class="bstat-val">100%</div><div class="bstat-label">Client-side · No backend</div></div>
-      <div><div class="bstat-val">0 ₹</div><div class="bstat-label">Hosting cost · GitHub Pages</div></div>
     </div>
   </div>
 
@@ -9034,7 +9024,7 @@ function dlCSV(key) {
   const csv = data.map(row => row.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `rb2f_${key}_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+  a.download = `RB2F_${key}_${new Date().toISOString().split('T')[0]}.csv`; a.click();
 }
 
 function dlXLSX(key) {
@@ -9044,7 +9034,7 @@ function dlXLSX(key) {
   const ws = XLSX.utils.aoa_to_sheet(data);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, key.substring(0,30));
-  XLSX.writeFile(wb, `rb2f_${key}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  XLSX.writeFile(wb, `RB2F_${key}_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
 function downloadTemplate() {
@@ -12564,7 +12554,7 @@ function dlCSV(key) {
   const csv = data.map(row => row.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `rb2f_${key}_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+  a.download = `RB2F_${key}_${new Date().toISOString().split('T')[0]}.csv`; a.click();
 }
 
 function dlXLSX(key) {
@@ -12574,7 +12564,7 @@ function dlXLSX(key) {
   const ws = XLSX.utils.aoa_to_sheet(data);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, key.substring(0,30));
-  XLSX.writeFile(wb, `rb2f_${key}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  XLSX.writeFile(wb, `RB2F_${key}_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
 function downloadTemplate() {
