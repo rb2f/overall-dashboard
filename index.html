@@ -1753,7 +1753,7 @@ code { background: var(--surface2); border: 1px solid var(--border); border-radi
 
 <div class="hub-topbar">
   <div class="hub-topbar-brand">RB2F <em>×</em> Analytics Dashboard</div>
-  <div class="hub-topbar-meta">rb2f / overall-dashboard</div>
+  <div class="hub-topbar-meta">RB2F / overall-dashboard</div>
 </div>
 
 <div class="hub-tabbar">
@@ -1767,7 +1767,7 @@ code { background: var(--surface2); border: 1px solid var(--border); border-radi
 <div class="hub-content">
 
   <div class="hub-panel visible" id="hub-panel-home">
-    <div class="hub-home-eyebrow">rb2f / overall-dashboard</div>
+    <div class="hub-home-eyebrow">RB2F / overall-dashboard</div>
     <div class="hub-home-title">RB2F <em>×</em> Analytics<br>Dashboard</div>
     <div class="hub-home-sub">Click a card — the dashboard opens right here, no redirects.</div>
     <div class="hub-cards">
@@ -1807,11 +1807,6 @@ code { background: var(--surface2); border: 1px solid var(--border); border-radi
         </div>
         <div class="hub-card-footer"><span class="hub-card-file">budget-planner.html</span><span class="hub-card-cta">Open →</span></div>
       </div>
-    </div>
-    <div class="hub-home-bottom">
-      <div><div class="hub-bstat-val">04</div><div class="hub-bstat-label">Active dashboards</div></div>
-      <div><div class="hub-bstat-val">100%</div><div class="hub-bstat-label">Client-side · No backend</div></div>
-      <div><div class="hub-bstat-val">0 ₹</div><div class="hub-bstat-label">Hosting cost · GitHub Pages</div></div>
     </div>
   </div>
 
@@ -8922,7 +8917,7 @@ function dlCSV(key) {
   const csv = data.map(row => row.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `rb2f_${key}_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+  a.download = `RB2F_${key}_${new Date().toISOString().split('T')[0]}.csv`; a.click();
 }
 
 function dlXLSX(key) {
@@ -8932,7 +8927,7 @@ function dlXLSX(key) {
   const ws = XLSX.utils.aoa_to_sheet(data);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, key.substring(0,30));
-  XLSX.writeFile(wb, `rb2f_${key}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  XLSX.writeFile(wb, `RB2F_${key}_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
 function downloadTemplate() {
@@ -12488,7 +12483,7 @@ function dlCSV(key) {
   const csv = data.map(row => row.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `rb2f_${key}_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+  a.download = `RB2F_${key}_${new Date().toISOString().split('T')[0]}.csv`; a.click();
 }
 
 function dlXLSX(key) {
@@ -12498,7 +12493,7 @@ function dlXLSX(key) {
   const ws = XLSX.utils.aoa_to_sheet(data);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, key.substring(0,30));
-  XLSX.writeFile(wb, `rb2f_${key}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  XLSX.writeFile(wb, `RB2F_${key}_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
 function downloadTemplate() {
